@@ -68,12 +68,12 @@ def get_groups_with_equal_size(files_by_size: dict[int, list[str]]) -> dict[str,
     print()
     return files_by_hash
 
-def get_duplicates(files_by_hash: dict[str, list[str]]):
-    duplicates = sorted(
-        [sorted(file_list) for file_list in files_by_hash.values() if len(file_list) > 1],
-        key=lambda group: group[0]
-    )
+def get_duplicates(files_by_hash: dict[str, list[str]], sort_by_group: bool = False) -> list[list[str]]:
+    duplicates = [sorted(file_list) for file_list in files_by_hash.values() if len(file_list) > 1]
+    if sort_by_group:
+        duplicates.sort(key=len, reverse=True)
     return duplicates
+
 
 def print_duplicates(duplicates: list[list[str]]) -> None:
     if not duplicates:
@@ -97,6 +97,12 @@ def main() -> None:
         help="Mandatory parameter: path to folder for search"
     )
 
+    parser.add_argument(
+        '--sort-by-group-size',
+        action='store_true',
+        help="Optional: sort duplicate groups by number of files (descending)"
+    )
+
     args = parser.parse_args()
     path_from_user = args.folder_path
     print(f"Path to search: {path_from_user}")
@@ -104,7 +110,7 @@ def main() -> None:
     files_by_size = get_groups_by_size(path_from_user)
     files_by_hash = get_groups_with_equal_size(files_by_size)
 
-    duplicates = get_duplicates(files_by_hash)
+    duplicates = get_duplicates(files_by_hash, sort_by_group=args.sort_by_group_size)
     print_duplicates(duplicates)
 
 if __name__ == "__main__":
