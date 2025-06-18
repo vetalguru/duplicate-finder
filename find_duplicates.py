@@ -1,7 +1,8 @@
 import argparse
 import hashlib
 import os
-import sys
+from collections import defaultdict
+
 
 def calc_file_hash(file_path, block_size=65536):
     """
@@ -21,33 +22,90 @@ def calc_file_hash(file_path, block_size=65536):
         print(f"ERROR: Unable to read file: {file_path}")
         return None
 
+
+def get_groups_by_size(folder_path: str) -> dict[int, list[str]]:
+    """
+    Scan files and group them by using file size
+    """
+    if not os.path.isdir(folder_path):
+        print(f"ERROR: Path '{folder_path}' is not a folder or doesn't exists")
+        return {}
+
+    files_by_size = defaultdict(list)
+    print("Scanning files and grouping by size...")
+    for dirpath, _, filenames in os.walk(folder_path):
+        for filename in filenames:
+            file_path = os.path.join(dirpath, filename)
+            try:
+                # Skip file links
+                if not os.path.islink(file_path):
+                    file_size = os.path.getsize(file_path)
+                    files_by_size[file_size].append(file_path)
+            except OSError:
+                # File can be deleted in time of scanning
+                print(f"ATTENTION: Unable to get access to the file: {file_path}")
+                continue
+
+    return files_by_size
+
+def get_groups_with_equal_size(files_by_size: dict[int, list[str]]) -> dict[str, list[str]]:
+    potential_duplicates = {size: files for size, files in files_by_size.items() if len(files) > 1}
+    total_files_to_hash = sum(len(files) for files in potential_duplicates.values())
+
+    progress_counter = 0
+    files_by_hash = defaultdict(list)
+    for size in potential_duplicates:
+        for file_path in potential_duplicates[size]:
+            progress_counter += 1
+            print(f"\rComparison... [{progress_counter}/{total_files_to_hash}]", end="")
+
+            try:
+                file_hash = calc_file_hash(file_path)
+                if file_hash:
+                    files_by_hash[file_hash].append(file_path)
+            except Exception as e:
+                print(f"\nERROR: Unable to hash file {file_path}: {e}")
+    print()
+    return files_by_hash
+
+def get_duplicates(files_by_hash: dict[str, list[str]]):
+    duplicates = sorted(
+        [sorted(file_list) for file_list in files_by_hash.values() if len(file_list) > 1],
+        key=lambda group: group[0]
+    )
+    return duplicates
+
+def print_duplicates(duplicates: list[list[str]]) -> None:
+    if not duplicates:
+        print("No duplicates found.")
+        return
+
+    print("\nDuplicate files:")
+    for idx, group in enumerate(duplicates, start=1):
+        print(f"\nGroup {idx} ({len(group)} file(s)):")
+        for path in group:
+            print(f"  - {path}")
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description = "Script to find and delete duplicates of the files"
+        description="Script to find and delete duplicates of the files"
     )
 
     parser.add_argument(
-        "folder_path",
-        type = str,
+        'folder_path',
+        type=str,
         help="Mandatory parameter: path to folder for search"
     )
 
     args = parser.parse_args()
     path_from_user = args.folder_path
     print(f"Path to search: {path_from_user}")
-    if not os.path.isdir(path_from_user):
-        print(f"ERROR: the path '{path_from_user}' is no a directory or doesn't exists", file=sys.stderr)
-        sys.exit(1)
 
-    print("The path is correct")
+    files_by_size = get_groups_by_size(path_from_user)
+    files_by_hash = get_groups_with_equal_size(files_by_size)
 
-    test_file =os.path.join(path_from_user, "test_file.txt")
-    file_hash = calc_file_hash(test_file)
-    if not file_hash:
-        print(f"Error: unable to calculate hash for file: {test_file}")
-        sys.exit(1)
-
-    print(f"File hash: {file_hash}")
+    duplicates = get_duplicates(files_by_hash)
+    print_duplicates(duplicates)
 
 if __name__ == "__main__":
     main()
