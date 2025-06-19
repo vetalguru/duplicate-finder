@@ -128,25 +128,33 @@ def save_duplicates_to_file(duplicates: list[list[str]], output_path: str) -> No
 
 def delete_duplicates(
         duplicates: list[list[str]],
-        report_path: str | None = None
+        report_path: str | None = None,
+        dry_run: bool = False
 ) -> None:
-    print("\nDeleting duplicate files...\n")
+    print("\nDeleting duplicate files...\n" if not dry_run else
+          "\n[DRY RUN] The following files would be deleted:\n")
     deleted_files = 0
     lines_for_report = []
 
-    for group_idx, group in enumerate(duplicates, start=1):
+    for _, group in enumerate(duplicates, start=1):
         # Save a first file from the group.
         # All others will be deleted
         for file_path in group[1:]:
-            try:
-                Path(file_path).unlink()
-                print(f"Deleted: {file_path}")
-                lines_for_report.append(f"Deleted: {file_path}")
-                deleted_files += 1
-            except Exception as e:
-                print(f"ERROR: Failed to delete {file_path}: {e}")
-                lines_for_report.append(f"FAILED: {file_path} ({e})")
-    print(f"\nTotal deleted files: {deleted_files}")
+            if dry_run:
+                print(f"[would delete] {file_path}")
+                lines_for_report.append(f"[would delete] {file_path}")
+            else:
+                try:
+                    Path(file_path).unlink()
+                    print(f"Deleted: {file_path}")
+                    lines_for_report.append(f"Deleted: {file_path}")
+                    deleted_files += 1
+                except Exception as e:
+                    print(f"ERROR: Failed to delete {file_path}: {e}")
+                    lines_for_report.append(f"FAILED: {file_path} ({e})")
+
+    print(f"\nTotal deleted files: {deleted_files}" if not dry_run else
+          f"\nTotal possible deleted files: {deleted_files}")
 
     if report_path:
         try:
@@ -202,6 +210,10 @@ def parse_arguments() -> argparse.Namespace:
         '--delete-report',
         type=str,
         help="Optional: path to report file where deleted file paths will be saved")
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help="Show a list of files to be deleted without actually deleting them")
 
     return parser.parse_args()
 
@@ -225,9 +237,12 @@ def main() -> None:
         save_duplicates_to_file(duplicates, args.output)
 
     if args.delete:
-        confirm = input("\nAre you sure you want to delete duplicate files? (y/[n]): ").strip().lower()
+        confirm = 'y'
+        if not args.dry_run:
+            confirm = input("\nAre you sure you want to delete duplicate files? (y/[n]): ").strip().lower()
+
         if confirm == 'y':
-            delete_duplicates(duplicates, args.delete_report)
+            delete_duplicates(duplicates, args.delete_report, args.dry_run)
         else:
             print("Deletion cancelled.")
 
