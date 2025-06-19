@@ -126,52 +126,60 @@ def save_duplicates_to_file(duplicates: list[list[str]], output_path: str) -> No
     except Exception as e:
         print(f"\nERROR: Unable to save to file {output_path}: {e}")
 
-def delete_duplicates(duplicates: list[list[str]]) -> None:
+def delete_duplicates(
+        duplicates: list[list[str]],
+        report_path: str | None = None
+) -> None:
     print("\nDeleting duplicate files...\n")
     deleted_files = 0
-    for group in duplicates:
+    lines_for_report = []
+
+    for group_idx, group in enumerate(duplicates, start=1):
         # Save a first file from the group.
         # All others will be deleted
         for file_path in group[1:]:
             try:
                 Path(file_path).unlink()
                 print(f"Deleted: {file_path}")
+                lines_for_report.append(f"Deleted: {file_path}")
                 deleted_files += 1
             except Exception as e:
                 print(f"ERROR: Failed to delete {file_path}: {e}")
+                lines_for_report.append(f"FAILED: {file_path} ({e})")
     print(f"\nTotal deleted files: {deleted_files}")
+
+    if report_path:
+        try:
+            with open(report_path, 'w', encoding='utf-8') as report_file:
+                report_file.write("Duplicate File deletion Report\n")
+                report_file.write("=" * 36 + "\n")
+                report_file.write("\n".join(lines_for_report))
+                report_file.write(f"\n\nTotal deleted: {deleted_files}\n")
+            print(f"Report saved to: {report_path}")
+        except Exception as e:
+            print(f"ERROR: Unable to write deletion report: {e}")
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Script to find and delete duplicates of the files"
-    )
-
+        description="Script to find and delete duplicates of the files")
     parser.add_argument(
         'folder_path',
         type=str,
-        help="Mandatory parameter: path to folder for search"
-    )
-
+        help="Mandatory parameter: path to folder for search")
     sort_group = parser.add_mutually_exclusive_group()
     sort_group.add_argument(
         '--sort-by-group-size',
         action='store_true',
-        help="Sort duplicate groups by number of files in group (descending)"
-    )
-
+        help="Sort duplicate groups by number of files in group (descending)")
     sort_group.add_argument(
         '--sort-by-file-size',
         action='store_true',
-        help="Sort duplicate groups by file size (descending)"
-    )
-
+        help="Sort duplicate groups by file size (descending)")
     parser.add_argument(
         '--output',
         '-o',
         type=str,
-        help="Optional: path to output file (e.g., duplicates.txt)"
-    )
-
+        help="Optional: path to output file (e.g., duplicates.txt)")
     parser.add_argument(
         '--exclude',
         '-e',
@@ -185,14 +193,15 @@ def parse_arguments() -> argparse.Namespace:
             "  temp/*         — exclude files in any 'temp' subdirectory\n"
             "  **/.git/**     — exclude everything inside .git folders (recursive)\n"
             "Patterns are matched against full POSIX-style paths."
-        )
-    )
-
+        ))
     parser.add_argument(
         '--delete',
         action='store_true',
-        help="Optional: delete duplicate files (keep first file per group)"
-    )
+        help="Optional: delete duplicate files (keep first file in group)")
+    parser.add_argument(
+        '--delete-report',
+        type=str,
+        help="Optional: path to report file where deleted file paths will be saved")
 
     return parser.parse_args()
 
@@ -218,7 +227,7 @@ def main() -> None:
     if args.delete:
         confirm = input("\nAre you sure you want to delete duplicate files? (y/[n]): ").strip().lower()
         if confirm == 'y':
-            delete_duplicates(duplicates)
+            delete_duplicates(duplicates, args.delete_report)
         else:
             print("Deletion cancelled.")
 
