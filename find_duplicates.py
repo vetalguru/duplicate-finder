@@ -126,6 +126,21 @@ def save_duplicates_to_file(duplicates: list[list[str]], output_path: str) -> No
     except Exception as e:
         print(f"\nERROR: Unable to save to file {output_path}: {e}")
 
+def delete_duplicates(duplicates: list[list[str]]) -> None:
+    print("\nDeleting duplicate files...\n")
+    deleted_files = 0
+    for group in duplicates:
+        # Save a first file from the group.
+        # All others will be deleted
+        for file_path in group[1:]:
+            try:
+                Path(file_path).unlink()
+                print(f"Deleted: {file_path}")
+                deleted_files += 1
+            except Exception as e:
+                print(f"ERROR: Failed to delete {file_path}: {e}")
+    print(f"\nTotal deleted files: {deleted_files}")
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Script to find and delete duplicates of the files"
@@ -143,7 +158,7 @@ def parse_arguments() -> argparse.Namespace:
         action='store_true',
         help="Sort duplicate groups by number of files in group (descending)"
     )
-    
+
     sort_group.add_argument(
         '--sort-by-file-size',
         action='store_true',
@@ -173,6 +188,12 @@ def parse_arguments() -> argparse.Namespace:
         )
     )
 
+    parser.add_argument(
+        '--delete',
+        action='store_true',
+        help="Optional: delete duplicate files (keep first file per group)"
+    )
+
     return parser.parse_args()
 
 def main() -> None:
@@ -193,6 +214,13 @@ def main() -> None:
 
     if args.output:
         save_duplicates_to_file(duplicates, args.output)
+
+    if args.delete:
+        confirm = input("\nAre you sure you want to delete duplicate files? (y/[n]): ").strip().lower()
+        if confirm == 'y':
+            delete_duplicates(duplicates)
+        else:
+            print("Deletion cancelled.")
 
 if __name__ == "__main__":
     main()
