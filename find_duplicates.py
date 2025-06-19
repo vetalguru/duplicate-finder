@@ -1,6 +1,7 @@
 import argparse
+import fnmatch
 import hashlib
-import os
+from pathlib import Path
 from collections import defaultdict
 
 
@@ -22,30 +23,36 @@ def calc_file_hash(file_path, block_size=65536):
         print(f"ERROR: Unable to read file: {file_path}")
         return None
 
+def is_excluded(path:str, patterns: list[str]) -> bool:
+    norm_path = Path(path).as_posix()
+    return any(fnmatch.fnmatch(norm_path, pattern) for pattern in patterns)
 
-def get_groups_by_size(folder_path: str) -> dict[int, list[str]]:
+def get_groups_by_size(
+        folder_path: Path,
+        exclude_patterns: list[str]
+) -> dict[int, list[str]]:
     """
     Scan files and group them by using file size
     """
-    if not os.path.isdir(folder_path):
-        print(f"ERROR: Path '{folder_path}' is not a folder or doesn't exists")
+    if not folder_path.is_dir():
+        print(f"ERROR: Path '{folder_path}' is not a folder or doesn't exist")
         return {}
 
-    files_by_size = defaultdict(list)
     print("Scanning files and grouping by size...")
-    for dirpath, _, filenames in os.walk(folder_path):
-        for filename in filenames:
-            file_path = os.path.join(dirpath, filename)
-            try:
-                # Skip file links
-                if not os.path.islink(file_path):
-                    file_size = os.path.getsize(file_path)
-                    files_by_size[file_size].append(file_path)
-            except OSError:
-                # File can be deleted in time of scanning
-                print(f"ATTENTION: Unable to get access to the file: {file_path}")
+    files_by_size = defaultdict(list)
+    for path in folder_path.rglob("*"):
+        if path.is_file() and not path.is_symlink():
+            if is_excluded(str(path), exclude_patterns):
                 continue
 
+            try:
+                file_size = path.stat().st_size
+                files_by_size[file_size].append(str(path))
+            except OSError:
+                print(f"ATTENTION: Unable to access file: {path}")
+                continue
+
+    print("Scanning finished")
     return files_by_size
 
 def get_groups_with_equal_size(files_by_size: dict[int, list[str]]) -> dict[str, list[str]]:
@@ -78,7 +85,7 @@ def get_duplicates(
     if sort_by_group:
         duplicates.sort(key=len, reverse=True)
     elif sort_by_size:
-        duplicates.sort(key=lambda group: os.path.getsize(group[0]), reverse=True)
+        duplicates.sort(key=lambda group: Path(group[0]).stat().st_size, reverse=True)
 
     return duplicates
 
@@ -89,7 +96,6 @@ def human_readable_size(size_bytes: int) -> str:
         size_bytes /= 1024
     return f"{size_bytes:.1f} PB"
 
-
 def print_duplicates(duplicates: list[list[str]]) -> None:
     if not duplicates:
         print("No duplicates found.")
@@ -97,7 +103,7 @@ def print_duplicates(duplicates: list[list[str]]) -> None:
 
     print("\nDuplicate files:")
     for idx, group in enumerate(duplicates, start=1):
-        file_size = os.path.getsize(group[0])
+        file_size = Path(group[0]).stat().st_size
         size_hr = human_readable_size(file_size)
         print(f"\nGroup {idx} ({len(group)} file(s), size: {size_hr}):")
 
@@ -112,7 +118,7 @@ def save_duplicates_to_file(duplicates: list[list[str]], output_path: str) -> No
 
             f.write("Duplicate files:\n")
             for idx, group in enumerate(duplicates, start=1):
-                file_size = os.path.getsize(group[0])
+                file_size = Path(group[0]).stat().st_size
                 f.write(f"\nGroup {idx} ({len(group)} file(s), size: {file_size} bytes):\n")
                 for path in group:
                     f.write(f"  - {path}\n")
@@ -120,7 +126,7 @@ def save_duplicates_to_file(duplicates: list[list[str]], output_path: str) -> No
     except Exception as e:
         print(f"\nERROR: Unable to save to file {output_path}: {e}")
 
-def main() -> None:
+def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Script to find and delete duplicates of the files"
     )
@@ -137,7 +143,7 @@ def main() -> None:
         action='store_true',
         help="Sort duplicate groups by number of files in group (descending)"
     )
-
+    
     sort_group.add_argument(
         '--sort-by-file-size',
         action='store_true',
@@ -151,11 +157,30 @@ def main() -> None:
         help="Optional: path to output file (e.g., duplicates.txt)"
     )
 
-    args = parser.parse_args()
-    path_from_user = args.folder_path
-    print(f"Path to search: {path_from_user}")
+    parser.add_argument(
+        '--exclude',
+        '-e',
+        type = str,
+        nargs = '*',
+        default = [],
+        help = (
+            "Optional: list of exclude patterns (supports wildcards).\n"
+            "Use Unix-style glob syntax:\n"
+            "  *.log          — exclude all .log files\n"
+            "  temp/*         — exclude files in any 'temp' subdirectory\n"
+            "  **/.git/**     — exclude everything inside .git folders (recursive)\n"
+            "Patterns are matched against full POSIX-style paths."
+        )
+    )
 
-    files_by_size = get_groups_by_size(path_from_user)
+    return parser.parse_args()
+
+def main() -> None:
+    args = parse_arguments()
+    folder_path = Path(args.folder_path).resolve()
+    print(f"Path to search: {folder_path}")
+
+    files_by_size = get_groups_by_size(folder_path, args.exclude)
     files_by_hash = get_groups_with_equal_size(files_by_size)
 
     duplicates = get_duplicates(
