@@ -104,6 +104,22 @@ def print_duplicates(duplicates: list[list[str]]) -> None:
         for path in group:
             print(f"  - {path}")
 
+def save_duplicates_to_file(duplicates: list[list[str]], output_path: str) -> None:
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            if not duplicates:
+                return
+
+            f.write("Duplicate files:\n")
+            for idx, group in enumerate(duplicates, start=1):
+                file_size = os.path.getsize(group[0])
+                f.write(f"\nGroup {idx} ({len(group)} file(s), size: {file_size} bytes):\n")
+                for path in group:
+                    f.write(f"  - {path}\n")
+        print(f"\nSaved results to: {output_path}")
+    except Exception as e:
+        print(f"\nERROR: Unable to save to file {output_path}: {e}")
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Script to find and delete duplicates of the files"
@@ -128,6 +144,13 @@ def main() -> None:
         help="Sort duplicate groups by file size (descending)"
     )
 
+    parser.add_argument(
+        '--output',
+        '-o',
+        type=str,
+        help="Optional: path to output file (e.g., duplicates.txt)"
+    )
+
     args = parser.parse_args()
     path_from_user = args.folder_path
     print(f"Path to search: {path_from_user}")
@@ -142,6 +165,9 @@ def main() -> None:
     )
 
     print_duplicates(duplicates)
+
+    if args.output:
+        save_duplicates_to_file(duplicates, args.output)
 
 if __name__ == "__main__":
     main()
