@@ -4,6 +4,7 @@
 from .cli_args import ArgumentParserAdapter
 from .finder import DuplicateFinder
 
+
 def main() -> None:
     # Parse command-line arguments (folder path, flags, etc.)
     args = ArgumentParserAdapter().parse()
@@ -17,8 +18,9 @@ def main() -> None:
         interactive=args.interactive,
         dry_run=args.dry_run,
         delete_report=args.delete_report,
-        threads=args.threads
+        threads=args.threads,
     )
+
 
 # Allow running the script directly
 if __name__ == "__main__":

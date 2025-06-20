@@ -3,38 +3,46 @@
 
 import argparse
 
+
 class ArgumentParserAdapter:
     def __init__(self):
         # Initialize the argument parser with a description
         self.parser = argparse.ArgumentParser(
-            description="Script to find and delete duplicates of the files")
+            description="Script to find and delete duplicates of the files"
+        )
         self._add_arguments()
 
     def _add_arguments(self):
         self.parser.add_argument(
-            'folder_path',
+            "folder_path",
             type=str,
-            help="Mandatory parameter: path to folder for search")
+            help="Mandatory parameter: path to folder for search",
+        )
 
         # Optional mutually exclusive flags for sorting strategy
         sort_group = self.parser.add_mutually_exclusive_group()
         sort_group.add_argument(
-            '--sort-by-group-size',
-            action='store_true',
-            help="Optional: Sort duplicate groups by number of files in group (descending)")
+            "--sort-by-group-size",
+            action="store_true",
+            help="Optional: Sort duplicate groups by number of files in group (descending)",
+        )
         sort_group.add_argument(
-            '--sort-by-file-size',
-            action='store_true',
-            help="Optional: Sort duplicate groups by file size (descending)")
+            "--sort-by-file-size",
+            action="store_true",
+            help="Optional: Sort duplicate groups by file size (descending)",
+        )
 
         self.parser.add_argument(
-            '--output', '-o',
+            "--output",
+            "-o",
             type=str,
-            help="Optional: path to output file (e.g., duplicates.txt)")
+            help="Optional: path to output file (e.g., duplicates.txt)",
+        )
         self.parser.add_argument(
-            '--exclude', '-e',
+            "--exclude",
+            "-e",
             type=str,
-            nargs='*',
+            nargs="*",
             default=[],
             help=(
                 "Optional: list of exclude patterns (supports wildcards).\n"
@@ -43,29 +51,35 @@ class ArgumentParserAdapter:
                 "  temp/*         — exclude files in any 'temp' subdirectory\n"
                 "  **/.git/**     — exclude everything inside .git folders (recursive)\n"
                 "Patterns are matched against full POSIX-style paths."
-            ))
-        self.parser.add_argument(
-            '--delete',
-            action='store_true',
-            help="Optional: delete duplicate files (keep first file in group)")
-        self.parser.add_argument(
-            '--delete-report',
-            type=str,
-            help="Optional: path to report file where deleted file paths will be saved")
-        self.parser.add_argument(
-            '--dry-run',
-            action='store_true',
-            help="Optional: Show a list of files to be deleted without actually deleting them")
-        self.parser.add_argument(
-            '--interactive', '-i',
-            action='store_true',
-            help="Optional: interactive mode, select files to delete group by group"
+            ),
         )
         self.parser.add_argument(
-            '--threads',
+            "--delete",
+            action="store_true",
+            help="Optional: delete duplicate files (keep first file in group)",
+        )
+        self.parser.add_argument(
+            "--delete-report",
+            type=str,
+            help="Optional: path to report file where deleted file paths will be saved",
+        )
+        self.parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Optional: Show a list of files to be deleted without actually deleting them",
+        )
+        self.parser.add_argument(
+            "--interactive",
+            "-i",
+            action="store_true",
+            help="Optional: interactive mode, select files to delete group by group",
+        )
+        self.parser.add_argument(
+            "--threads",
             type=int,
             default=8,
-            help="Optional: Number of threads (Default value: 8)")
+            help="Optional: Number of threads (Default value: 8)",
+        )
 
     def parse(self) -> argparse.Namespace:
         # Parse and return the command-line arguments
