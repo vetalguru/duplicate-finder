@@ -1,8 +1,11 @@
-import argparse
+# Copyright (c) 2025 Vitalii Shkibtan
+# Licensed under the MIT License. See LICENSE file in the project root for full license text.
 
+import argparse
 
 class ArgumentParserAdapter:
     def __init__(self):
+        # Initialize the argument parser with a description
         self.parser = argparse.ArgumentParser(
             description="Script to find and delete duplicates of the files")
         self._add_arguments()
@@ -12,6 +15,8 @@ class ArgumentParserAdapter:
             'folder_path',
             type=str,
             help="Mandatory parameter: path to folder for search")
+
+        # Optional mutually exclusive flags for sorting strategy
         sort_group = self.parser.add_mutually_exclusive_group()
         sort_group.add_argument(
             '--sort-by-group-size',
@@ -21,6 +26,7 @@ class ArgumentParserAdapter:
             '--sort-by-file-size',
             action='store_true',
             help="Optional: Sort duplicate groups by file size (descending)")
+
         self.parser.add_argument(
             '--output', '-o',
             type=str,
@@ -62,4 +68,5 @@ class ArgumentParserAdapter:
             help="Optional: Number of threads (Default value: 8)")
 
     def parse(self) -> argparse.Namespace:
+        # Parse and return the command-line arguments
         return self.parser.parse_args()

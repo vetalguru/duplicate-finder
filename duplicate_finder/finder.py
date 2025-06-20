@@ -1,14 +1,17 @@
+# Copyright (c) 2025 Vitalii Shkibtan
+# Licensed under the MIT License. See LICENSE file in the project root for full license text.
+
 import fnmatch
 import hashlib
 from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
 class DuplicateFinder:
     def __init__(self,
                  folder_path: str,
                  exclude_patterns=None):
+        # Initialize target folder and exclusion list
         if exclude_patterns is None:
             exclude_patterns = []
         self.folder_path = Path(folder_path).resolve()
@@ -26,6 +29,7 @@ class DuplicateFinder:
             interactive: bool = False,
             delete_report: str | None = None,
             threads: int = 8) -> list[list[str]]:
+        # Perform the full duplicate detection workflow
         self._group_by_size()
         self._group_by_hash(max_workers=threads)
         self._find_duplicates(sort_by_group=sort_by_group, sort_by_size=sort_by_size)
@@ -34,6 +38,7 @@ class DuplicateFinder:
         if output_path:
             self._save_to_file(output_path)
 
+        # Handle interactive or automatic deletion
         if interactive:
             self._interactive_deletion()
         elif delete:
@@ -48,6 +53,7 @@ class DuplicateFinder:
         return self.duplicates
 
     def _is_excluded(self, path: str) -> bool:
+        # Check if a file path matches any exclusion pattern
         norm_path = Path(path).as_posix()
         return any(fnmatch.fnmatch(norm_path, pattern)
                    for pattern in self.exclude_patterns)
@@ -55,6 +61,7 @@ class DuplicateFinder:
     @staticmethod
     def _calc_file_hash(file_path: str,
                        block_size = 65536) -> str | None:
+        # Compute SHA256 hash for a given file
         sha256 = hashlib.sha256()
         try:
             with open(file_path, 'rb') as f:
@@ -66,6 +73,7 @@ class DuplicateFinder:
             return None
 
     def _group_by_size(self) -> None:
+        # Group all files by their size
         if not self.folder_path.is_dir():
             print(f"ERROR: Path '{self.folder_path}' is not a folder or doesn't exist")
             return
@@ -85,6 +93,7 @@ class DuplicateFinder:
         self.files_by_size = files_by_size
 
     def _group_by_hash(self, max_workers: int = 8) -> None:
+        # Calculate hash for files that have the same size
         print("Hashing potential duplicates...")
 
         potential_duplicates = {size: files for size, files in self.files_by_size.items() if len(files) > 1}
@@ -96,6 +105,7 @@ class DuplicateFinder:
         def hash_worker(path):
             return path, self._calc_file_hash(path)
 
+        # Parallel hashing by using threads
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_path = {executor.submit(hash_worker, path): path for path in files_to_hash}
             for i, future in enumerate(as_completed(future_to_path), 1):
@@ -110,6 +120,7 @@ class DuplicateFinder:
         self.files_by_hash = files_by_hash
 
     def _find_duplicates(self, sort_by_group: bool = False, sort_by_size: bool = False) -> None:
+        # Group files by hash; optionally sort the result
         groups = [sorted(group) for group in self.files_by_hash.values() if len(group) > 1]
         if sort_by_group:
             groups.sort(key=len, reverse=True)
@@ -119,6 +130,7 @@ class DuplicateFinder:
 
     @staticmethod
     def _human_readable_size(size_bytes: int) -> str:
+        # Convert byte size into human-readable format
         for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
             if size_bytes < 1024:
                 return f"{size_bytes:.1f} {unit}"
@@ -126,6 +138,7 @@ class DuplicateFinder:
         return f"{size_bytes:.1f} PB"
 
     def _print_duplicates(self) -> None:
+        # Print found duplicates in grouped format
         if not self.duplicates:
             print("No duplicates found.")
             return
@@ -138,6 +151,7 @@ class DuplicateFinder:
                 print(f"  - {path}")
 
     def _save_to_file(self, output_path: str) -> None:
+        # Save duplicate report to a specified file
         try:
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write("Duplicate files:\n")
@@ -151,6 +165,7 @@ class DuplicateFinder:
             print(f"\nERROR: Failed to save to file {output_path}: {e}")
 
     def _delete_duplicates(self, dry_run: bool = False, report_path: str | None = None) -> None:
+        # Delete all duplicates (keeping first file in each group), optionally save report
         print("\n[DRY RUN]" if dry_run else "\nDeleting duplicate files...")
         deleted_count = 0
         report_lines = []
@@ -172,6 +187,7 @@ class DuplicateFinder:
 
         print(f"\nTotal deleted: {deleted_count}" if not dry_run else f"\nTotal possible deletions: {deleted_count}")
 
+        # Write deletion report if requested
         if report_path:
             try:
                 with open(report_path, 'w', encoding='utf-8') as f:
@@ -182,6 +198,7 @@ class DuplicateFinder:
                 print(f"ERROR: Failed to save report: {e}")
 
     def _interactive_deletion(self) -> None:
+        # Prompt user to manually choose which files to delete in each group
         print("\nInteractive duplicate cleanup started.")
         deleted_count = 0
 
