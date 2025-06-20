@@ -1,0 +1,31 @@
+[project]
+name = "duplicate-finder"
+version = "1.0.0"
+description = "Command-line tool to find and delete duplicate files"
+authors = [
+    { name = "Vitalii Shkibtan", email = "vetalguru@gmail.com"}]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["duplicates", "filesystem", "cli", "deduplication"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Utilities",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12"
+]
+
+[project.scripts]
+find-dupes = "duplicate_finder.__main__:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/vetalguru/duplicate-finder"
+Source = "https://github.com/vetalguru/duplicate-finder"
+Issues = "https://github.com/vetalguru/duplicate-finder/issues"

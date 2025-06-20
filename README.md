@@ -1,0 +1,1 @@
+Command-line tool to find and delete duplicate files
