@@ -51,6 +51,11 @@ class ArgumentParserAdapter:
             action='store_true',
             help="Optional: Show a list of files to be deleted without actually deleting them")
         self.parser.add_argument(
+            '--interactive', '-i',
+            action='store_true',
+            help="Optional: interactive mode, select files to delete group by group"
+        )
+        self.parser.add_argument(
             '--threads',
             type=int,
             default=8,

@@ -10,6 +10,7 @@ def main() -> None:
         sort_by_size=args.sort_by_file_size,
         output_path=args.output,
         delete=args.delete,
+        interactive=args.interactive,
         dry_run=args.dry_run,
         delete_report=args.delete_report,
         threads=args.threads

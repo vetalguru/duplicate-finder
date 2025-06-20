@@ -23,8 +23,9 @@ class DuplicateFinder:
             output_path: str | None = None,
             delete: bool = False,
             dry_run: bool = False,
+            interactive: bool = False,
             delete_report: str | None = None,
-            threads: int = 8) -> None:
+            threads: int = 8) -> list[list[str]]:
         self._group_by_size()
         self._group_by_hash(max_workers=threads)
         self._find_duplicates(sort_by_group=sort_by_group, sort_by_size=sort_by_size)
@@ -33,7 +34,9 @@ class DuplicateFinder:
         if output_path:
             self._save_to_file(output_path)
 
-        if delete:
+        if interactive:
+            self._interactive_deletion()
+        elif delete:
             confirm = 'y'
             if not dry_run:
                 confirm = input("\nAre you sure you want to delete duplicate files? (y/[n]): ").strip().lower()
@@ -41,6 +44,8 @@ class DuplicateFinder:
                 self._delete_duplicates(dry_run=dry_run, report_path=delete_report)
             else:
                 print("Deletion cancelled.")
+
+        return self.duplicates
 
     def _is_excluded(self, path: str) -> bool:
         norm_path = Path(path).as_posix()
@@ -175,3 +180,35 @@ class DuplicateFinder:
                 print(f"Report saved to: {report_path}")
             except Exception as e:
                 print(f"ERROR: Failed to save report: {e}")
+
+    def _interactive_deletion(self) -> None:
+        print("\nInteractive duplicate cleanup started.")
+        deleted_count = 0
+
+        for idx, group in enumerate(self.duplicates, start=1):
+            print(f"\nGroup {idx} ({len(group)} files):")
+            for i, path in enumerate(group):
+                print(f"  [{i + 1}] {path}")
+
+            choice = input("Select files to delete (e.g., 2 3), 'all', or press Enter to skip: ").strip().lower()
+            if not choice:
+                continue
+            if choice == 'all':
+                to_delete = group[1:]
+            else:
+                try:
+                    indices = [int(x) - 1 for x in choice.split()]
+                    to_delete = [group[i] for i in indices if 0 <= i < len(group)]
+                except ValueError:
+                    print("Invalid input. Skipping group.")
+                    continue
+
+            for path in to_delete:
+                try:
+                    Path(path).unlink()
+                    print(f"Deleted: {path}")
+                    deleted_count += 1
+                except Exception as e:
+                    print(f"ERROR: Could not delete {path}: {e}")
+
+        print(f"\nTotal deleted interactively: {deleted_count}")
