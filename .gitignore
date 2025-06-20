@@ -1,4 +1,43 @@
-.idea/
-.venv/
-
+# 🐍 Python bytecode and cache
 __pycache__/
+*.py[cod]
+*.pyo
+
+# 🧪 Test output and coverage files
+.coverage
+.tox/
+.nox/
+.cache/
+.pytest_cache/
+htmlcov/
+
+# 📦 Build artifacts
+build/
+dist/
+*.egg-info/
+
+# 📚 Documentation output
+docs/_build/
+docs/_static/generated/
+site/  # for MkDocs
+
+# 🧰 Virtual environments
+.venv/
+venv/
+env/
+
+# 💻 IDE configurations
+.idea/
+.vscode/
+
+# 📄 Log and temp files
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+
+# 📦 Packaging tools (pipenv, poetry lock, etc.)
+Pipfile.lock
+poetry.lock
+
