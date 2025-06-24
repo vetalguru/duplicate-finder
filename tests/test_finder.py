@@ -238,3 +238,22 @@ def test_deletion_report_is_created(temp_dir):
     text = report.read_text()
     assert "[would delete]" in text
     assert str(f1) in text or str(f2) in text
+
+
+def test_no_deletion_prompt_if_no_duplicates(tmp_path, monkeypatch):
+    (tmp_path / "a.txt").write_text("hello")
+    (tmp_path / "b.txt").write_text("world")
+
+    called = False
+
+    def fake_input(prompt):
+        nonlocal called
+        called = True
+        return "n"
+
+    monkeypatch.setattr("builtins.input", fake_input)
+
+    finder = DuplicateFinder(tmp_path)
+    finder.run(delete=True, interactive=True)
+
+    assert not called, "Input() should not be called when no duplicates exist"

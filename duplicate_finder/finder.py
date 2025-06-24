@@ -39,6 +39,10 @@ class DuplicateFinder:
             sort_by_size=sort_by_size)
         self._print_duplicates()
 
+        if not self.duplicates:
+            print("No duplicates to delete.")
+            return self.duplicates
+
         if output_path:
             self._save_to_file(output_path)
 
