@@ -29,3 +29,12 @@ build-backend = "setuptools.build_meta"
 Homepage = "https://github.com/vetalguru/duplicate-finder"
 Source = "https://github.com/vetalguru/duplicate-finder"
 Issues = "https://github.com/vetalguru/duplicate-finder/issues"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra"
+testpaths = [
+  "tests"
+]
+python_files = "test_*.py"
+
