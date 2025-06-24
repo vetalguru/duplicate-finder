@@ -244,7 +244,7 @@ class DuplicateFinder:
         print(
             f"\nTotal"
             f" {'deleted' if not dry_run else 'possible deletions'}:"
-            f"{deleted_count}"
+            f" {deleted_count}"
         )
 
         print(
