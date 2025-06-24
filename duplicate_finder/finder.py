@@ -35,7 +35,8 @@ class DuplicateFinder:
         self._group_by_size()
         self._group_by_hash(max_workers=threads)
         self._find_duplicates(
-            sort_by_group=sort_by_group, sort_by_size=sort_by_size)
+            sort_by_group=sort_by_group,
+            sort_by_size=sort_by_size)
         self._print_duplicates()
 
         if output_path:
@@ -68,8 +69,8 @@ class DuplicateFinder:
         # Check if a file path matches any exclusion pattern
         norm_path = Path(path).as_posix()
         return any(
-            fnmatch.fnmatch(norm_path, pattern) for pattern
-            in self.exclude_patterns
+            fnmatch.fnmatch(norm_path, pattern)
+            for pattern in self.exclude_patterns
         )
 
     @staticmethod
@@ -88,15 +89,19 @@ class DuplicateFinder:
     def _group_by_size(self) -> None:
         # Group all files by their size
         if not self.folder_path.is_dir():
-            print(f"ERROR: Path '{self.folder_path}'"
-                  f" is not a folder or doesn't exist")
+            print(
+                f"ERROR: Path '{self.folder_path}'"
+                f" is not a folder or doesn't exist"
+            )
             return
 
         print("Scanning files and grouping by size...")
         files_by_size = defaultdict(list)
 
-        files = [p for p in self.folder_path.rglob("*")
-                 if p.is_file() and not p.is_symlink()]
+        files = [
+            p for p in self.folder_path.rglob("*")
+            if p.is_file() and not p.is_symlink()
+        ]
         total = len(files)
 
         for i, path in enumerate(files, 1):
@@ -119,8 +124,8 @@ class DuplicateFinder:
         print("Hashing potential duplicates...")
 
         potential_duplicates = {
-            size: files for size, files in self.files_by_size.items()
-            if len(files) > 1
+            size: files for size, files
+            in self.files_by_size.items() if len(files) > 1
         }
         files_to_hash = [
             path for files in potential_duplicates.values() for path in files
@@ -135,8 +140,9 @@ class DuplicateFinder:
         # Parallel hashing by using threads
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_path = {
-                executor.submit(hash_worker,
-                                path): path for path in files_to_hash
+                executor.submit(
+                    hash_worker, path):
+                        path for path in files_to_hash
             }
             for i, future in enumerate(as_completed(future_to_path), 1):
                 print(f"\r[Hashing] Progress [{i}/{total}]", end="")
@@ -214,9 +220,14 @@ class DuplicateFinder:
         print("\n[DRY RUN]" if dry_run else "\nDeleting duplicate files...")
         deleted_count = 0
         report_lines = []
-
+        total_deleted_size = 0
         for group in self.duplicates:
             for path in group[1:]:  # Keep just a first file in each group
+                try:
+                    file_size = Path(path).stat().st_size
+                except Exception:
+                    file_size = 0
+
                 if dry_run:
                     print(f"[would delete] {path}")
                     report_lines.append(f"[would delete] {path}")
@@ -225,15 +236,21 @@ class DuplicateFinder:
                         Path(path).unlink()
                         print(f"Deleted: {path}")
                         report_lines.append(f"Deleted: {path}")
-                        deleted_count += 1
                     except Exception as e:
                         print(f"ERROR: Failed to delete {path}: {e}")
                         report_lines.append(f"FAILED: {path} ({e})")
+                deleted_count += 1
+                total_deleted_size += file_size
+        print(
+            f"\nTotal"
+            f" {'deleted' if not dry_run else 'possible deletions'}:"
+            f"{deleted_count}"
+        )
 
         print(
-            f"\nTotal deleted: {deleted_count}"
-            if not dry_run
-            else f"\nTotal possible deletions: {deleted_count}"
+            f"Total"
+            f" {'freed' if not dry_run else 'possible freed'}"
+            f" size: {self._human_readable_size(total_deleted_size)}"
         )
 
         # Write deletion report if requested
