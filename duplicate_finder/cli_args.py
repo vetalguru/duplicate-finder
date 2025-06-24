@@ -2,6 +2,7 @@
 # Licensed under the MIT License. See LICENSE file in the project root for full license text.
 
 import argparse
+import os
 
 
 class ArgumentParserAdapter:
@@ -74,11 +75,14 @@ class ArgumentParserAdapter:
             action="store_true",
             help="Optional: interactive mode, select files to delete group by group",
         )
+
+        max_workers = min(32, os.cpu_count() or 8) # Use CPU cores efficiently
         self.parser.add_argument(
             "--threads",
+            "-t",
             type=int,
-            default=8,
-            help="Optional: Number of threads (Default value: 8)",
+            default=max_workers,
+            help="Optional: Number of threads. Dynamically adjusted by default",
         )
 
     def parse(self) -> argparse.Namespace:
