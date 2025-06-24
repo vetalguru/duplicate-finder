@@ -1,5 +1,6 @@
 # Copyright (c) 2025 Vitalii Shkibtan
-# Licensed under the MIT License. See LICENSE file in the project root for full license text.
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license text.
 
 import fnmatch
 import hashlib
@@ -33,7 +34,8 @@ class DuplicateFinder:
         # Perform the full duplicate detection workflow
         self._group_by_size()
         self._group_by_hash(max_workers=threads)
-        self._find_duplicates(sort_by_group=sort_by_group, sort_by_size=sort_by_size)
+        self._find_duplicates(
+            sort_by_group=sort_by_group, sort_by_size=sort_by_size)
         self._print_duplicates()
 
         if output_path:
@@ -47,13 +49,16 @@ class DuplicateFinder:
             if not dry_run:
                 confirm = (
                     input(
-                        "\nAre you sure you want to delete duplicate files? (y/[n]): "
+                        "\nAre you sure you want to"
+                        " delete duplicate files? (y/[n]): "
                     )
                     .strip()
                     .lower()
                 )
             if confirm == "y":
-                self._delete_duplicates(dry_run=dry_run, report_path=delete_report)
+                self._delete_duplicates(
+                    dry_run=dry_run,
+                    report_path=delete_report)
             else:
                 print("Deletion cancelled.")
 
@@ -63,7 +68,8 @@ class DuplicateFinder:
         # Check if a file path matches any exclusion pattern
         norm_path = Path(path).as_posix()
         return any(
-            fnmatch.fnmatch(norm_path, pattern) for pattern in self.exclude_patterns
+            fnmatch.fnmatch(norm_path, pattern) for pattern
+            in self.exclude_patterns
         )
 
     @staticmethod
@@ -82,13 +88,15 @@ class DuplicateFinder:
     def _group_by_size(self) -> None:
         # Group all files by their size
         if not self.folder_path.is_dir():
-            print(f"ERROR: Path '{self.folder_path}' is not a folder or doesn't exist")
+            print(f"ERROR: Path '{self.folder_path}'"
+                  f" is not a folder or doesn't exist")
             return
 
         print("Scanning files and grouping by size...")
         files_by_size = defaultdict(list)
 
-        files = [p for p in self.folder_path.rglob("*") if p.is_file() and not p.is_symlink()]
+        files = [p for p in self.folder_path.rglob("*")
+                 if p.is_file() and not p.is_symlink()]
         total = len(files)
 
         for i, path in enumerate(files, 1):
@@ -111,7 +119,8 @@ class DuplicateFinder:
         print("Hashing potential duplicates...")
 
         potential_duplicates = {
-            size: files for size, files in self.files_by_size.items() if len(files) > 1
+            size: files for size, files in self.files_by_size.items()
+            if len(files) > 1
         }
         files_to_hash = [
             path for files in potential_duplicates.values() for path in files
@@ -126,7 +135,8 @@ class DuplicateFinder:
         # Parallel hashing by using threads
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_path = {
-                executor.submit(hash_worker, path): path for path in files_to_hash
+                executor.submit(hash_worker,
+                                path): path for path in files_to_hash
             }
             for i, future in enumerate(as_completed(future_to_path), 1):
                 print(f"\r[Hashing] Progress [{i}/{total}]", end="")
@@ -135,7 +145,8 @@ class DuplicateFinder:
                     if file_hash:
                         files_by_hash[file_hash].append(path)
                 except Exception as e:
-                    print(f"\nERROR: Failed to hash {future_to_path[future]}: {e}")
+                    print(f"\nERROR: Failed to hash"
+                          f" {future_to_path[future]}: {e}")
         print()
         self.files_by_hash = files_by_hash
 
@@ -144,7 +155,8 @@ class DuplicateFinder:
     ) -> None:
         # Group files by hash; optionally sort the result
         groups = [
-            sorted(group) for group in self.files_by_hash.values() if len(group) > 1
+            sorted(group) for group
+            in self.files_by_hash.values() if len(group) > 1
         ]
         if sort_by_group:
             groups.sort(key=len, reverse=True)
@@ -171,7 +183,8 @@ class DuplicateFinder:
         for idx, group in enumerate(self.duplicates, start=1):
             size = Path(group[0]).stat().st_size
             print(
-                f"\nGroup {idx} ({len(group)} file(s), size: {self._human_readable_size(size)}):"
+                f"\nGroup {idx} ({len(group)}"
+                f" file(s), size: {self._human_readable_size(size)}):"
             )
             for path in group:
                 print(f"  - {path}")
@@ -184,7 +197,8 @@ class DuplicateFinder:
                 for idx, group in enumerate(self.duplicates, 1):
                     size = Path(group[0]).stat().st_size
                     f.write(
-                        f"\nGroup {idx} ({len(group)} file(s), size: {size} bytes):\n"
+                        f"\nGroup {idx} ({len(group)}"
+                        f" file(s), size: {size} bytes):\n"
                     )
                     for path in group:
                         f.write(f"  - {path}\n")
@@ -195,7 +209,8 @@ class DuplicateFinder:
     def _delete_duplicates(
         self, dry_run: bool = False, report_path: str | None = None
     ) -> None:
-        # Delete all duplicates (keeping first file in each group), optionally save report
+        # Delete all duplicates (keeping first file
+        # in each group), optionally save report
         print("\n[DRY RUN]" if dry_run else "\nDeleting duplicate files...")
         deleted_count = 0
         report_lines = []
@@ -225,7 +240,8 @@ class DuplicateFinder:
         if report_path:
             try:
                 with open(report_path, "w", encoding="utf-8") as f:
-                    f.write("Duplicate File Deletion Report\n" + "=" * 36 + "\n")
+                    f.write("Duplicate File Deletion"
+                            " Report\n" + "=" * 36 + "\n")
                     f.writelines(line + "\n" for line in report_lines)
                 print(f"Report saved to: {report_path}")
             except Exception as e:
@@ -243,7 +259,8 @@ class DuplicateFinder:
 
             choice = (
                 input(
-                    "Select files to delete (e.g., 2 3), 'all', or press Enter to skip: "
+                    "Select files to delete (e.g., 2 3),"
+                    " 'all', or press Enter to skip: "
                 )
                 .strip()
                 .lower()
@@ -255,7 +272,8 @@ class DuplicateFinder:
             else:
                 try:
                     indices = [int(x) - 1 for x in choice.split()]
-                    to_delete = [group[i] for i in indices if 0 <= i < len(group)]
+                    to_delete = [group[i] for i in indices
+                                 if 0 <= i < len(group)]
                 except ValueError:
                     print("Invalid input. Skipping group.")
                     continue

@@ -1,13 +1,11 @@
 # Copyright (c) 2025 Vitalii Shkibtan
-# Licensed under the MIT License. See LICENSE file in the project root for full license text.
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license text.
 
 
 import subprocess
 import sys
 from pathlib import Path
-import tempfile
-import shutil
-import pytest
 
 
 def create_file(path: Path, content="data"):
@@ -32,8 +30,8 @@ def test_help_shows_usage():
 
 
 def test_find_duplicates_in_cli(tmp_path):
-    f1 = create_file(tmp_path / "a.txt", "dupe")
-    f2 = create_file(tmp_path / "b.txt", "dupe")
+    create_file(tmp_path / "a.txt", "dupe")
+    create_file(tmp_path / "b.txt", "dupe")
 
     result = run_cli(str(tmp_path))
     assert result.returncode == 0
@@ -51,7 +49,8 @@ def test_dry_run_output(tmp_path):
 
 def test_output_report(tmp_path):
     file1 = create_file(tmp_path / "a.txt", "abc")
-    file2 = create_file(tmp_path / "b.txt", "abc")
+
+    create_file(tmp_path / "b.txt", "abc")
     report = tmp_path / "report.txt"
 
     result = run_cli(str(tmp_path), "--output", str(report))

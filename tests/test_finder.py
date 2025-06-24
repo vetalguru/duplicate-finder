@@ -1,5 +1,6 @@
 # Copyright (c) 2025 Vitalii Shkibtan
-# Licensed under the MIT License. See LICENSE file in the project root for full license text.
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license text.
 
 import tempfile
 import stat
@@ -74,7 +75,7 @@ def test_dry_run_deletion(temp_dir, capsys):
     file2 = create_file(temp_dir / "x2.txt", "dupe")
 
     finder = DuplicateFinder(temp_dir)
-    result = finder.run(delete=True, dry_run=True)
+    finder.run(delete=True, dry_run=True)
     assert Path(file1).exists()
     assert Path(file2).exists()
 
@@ -100,13 +101,15 @@ def test_actual_deletion(temp_dir):
 
 
 def test_zero_byte_files_are_duplicates(temp_dir):
-    file1 = (temp_dir / "zero1.txt").touch()
-    file2 = (temp_dir / "zero2.txt").touch()
+    (temp_dir / "zero1.txt").touch()
+    (temp_dir / "zero2.txt").touch()
 
     finder = DuplicateFinder(temp_dir)
     result = finder.run()
     assert len(result) == 1
-    assert set(result[0]) == {str(temp_dir / "zero1.txt"), str(temp_dir / "zero2.txt")}
+    assert (set(result[0]) ==
+            {str(temp_dir / "zero1.txt"),
+             str(temp_dir / "zero2.txt")})
 
 
 def test_nested_directories(temp_dir):
@@ -123,8 +126,8 @@ def test_nested_directories(temp_dir):
 
 def test_exclusion_in_nested_paths(temp_dir):
     (temp_dir / "ignore").mkdir()
-    file1 = create_file(temp_dir / "keep.txt", "same")
-    file2 = create_file(temp_dir / "ignore" / "skip.txt", "same")
+    create_file(temp_dir / "keep.txt", "same")
+    create_file(temp_dir / "ignore" / "skip.txt", "same")
 
     finder = DuplicateFinder(temp_dir, exclude_patterns=["*/ignore/*"])
     result = finder.run()
@@ -217,8 +220,8 @@ def test_file_with_unreadable_stat(temp_dir, monkeypatch):
 
 
 def test_exclude_exact_filename(temp_dir):
-    f1 = create_file(temp_dir / "keep.txt", "same")
-    f2 = create_file(temp_dir / "exclude.txt", "same")
+    create_file(temp_dir / "keep.txt", "same")
+    create_file(temp_dir / "exclude.txt", "same")
 
     finder = DuplicateFinder(temp_dir, exclude_patterns=["*/exclude.txt"])
     result = finder.run()
@@ -231,7 +234,7 @@ def test_deletion_report_is_created(temp_dir):
     report = temp_dir / "report.txt"
 
     finder = DuplicateFinder(temp_dir)
-    result = finder.run(delete=True, dry_run=True, delete_report=str(report))
+    finder.run(delete=True, dry_run=True, delete_report=str(report))
     text = report.read_text()
     assert "[would delete]" in text
     assert str(f1) in text or str(f2) in text

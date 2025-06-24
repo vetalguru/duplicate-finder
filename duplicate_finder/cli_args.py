@@ -1,5 +1,6 @@
 # Copyright (c) 2025 Vitalii Shkibtan
-# Licensed under the MIT License. See LICENSE file in the project root for full license text.
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license text.
 
 import argparse
 import os
@@ -25,7 +26,8 @@ class ArgumentParserAdapter:
         sort_group.add_argument(
             "--sort-by-group-size",
             action="store_true",
-            help="Optional: Sort duplicate groups by number of files in group (descending)",
+            help="Optional: Sort duplicate groups by number"
+            " of files in group (descending)",
         )
         sort_group.add_argument(
             "--sort-by-file-size",
@@ -50,7 +52,8 @@ class ArgumentParserAdapter:
                 "Use Unix-style glob syntax:\n"
                 "  *.log          — exclude all .log files\n"
                 "  temp/*         — exclude files in any 'temp' subdirectory\n"
-                "  **/.git/**     — exclude everything inside .git folders (recursive)\n"
+                "  **/.git/**     — exclude everything inside .git folders"
+                " (recursive)\n"
                 "Patterns are matched against full POSIX-style paths."
             ),
         )
@@ -62,27 +65,32 @@ class ArgumentParserAdapter:
         self.parser.add_argument(
             "--delete-report",
             type=str,
-            help="Optional: path to report file where deleted file paths will be saved",
+            help="Optional: path to report file where deleted"
+            " file paths will be saved",
         )
         self.parser.add_argument(
             "--dry-run",
             action="store_true",
-            help="Optional: Show a list of files to be deleted without actually deleting them",
+            help="Optional: Show a list of files to be deleted"
+            " without actually deleting them",
         )
         self.parser.add_argument(
             "--interactive",
             "-i",
             action="store_true",
-            help="Optional: interactive mode, select files to delete group by group",
+            help="Optional: interactive mode, select files"
+                 " to delete group by group",
         )
 
-        max_workers = min(32, os.cpu_count() or 8) # Use CPU cores efficiently
+        # Use CPU cores efficiently
+        max_workers = min(32, os.cpu_count() or 8)
         self.parser.add_argument(
             "--threads",
             "-t",
             type=int,
             default=max_workers,
-            help="Optional: Number of threads. Dynamically adjusted by default",
+            help="Optional: Number of threads."
+                 " Dynamically adjusted by default",
         )
 
     def parse(self) -> argparse.Namespace:
