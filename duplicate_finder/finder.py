@@ -40,7 +40,6 @@ class DuplicateFinder:
         self._print_duplicates()
 
         if not self.duplicates:
-            print("No duplicates to delete.")
             return self.duplicates
 
         if output_path:
