@@ -87,15 +87,22 @@ class DuplicateFinder:
 
         print("Scanning files and grouping by size...")
         files_by_size = defaultdict(list)
-        for path in self.folder_path.rglob("*"):
-            if path.is_file() and not path.is_symlink():
-                if self._is_excluded(str(path)):
-                    continue
-                try:
-                    size = path.stat().st_size
-                    files_by_size[size].append(str(path))
-                except OSError:
-                    print(f"ATTENTION: Unable to access file: {path}")
+
+        files = [p for p in self.folder_path.rglob("*") if p.is_file() and not p.is_symlink()]
+        total = len(files)
+
+        for i, path in enumerate(files, 1):
+            if self._is_excluded(str(path)):
+                continue
+
+            try:
+                size = path.stat().st_size
+                files_by_size[size].append(str(path))
+            except OSError:
+                print(f"\nATTENTION: Unable to access file: {path}")
+
+            print(f"\r[Size Scan] Progress[{i}/{total}]", end="")
+
         print("Scanning finished")
         self.files_by_size = files_by_size
 
@@ -122,7 +129,7 @@ class DuplicateFinder:
                 executor.submit(hash_worker, path): path for path in files_to_hash
             }
             for i, future in enumerate(as_completed(future_to_path), 1):
-                print(f"\rProgress [{i}/{total}]", end="")
+                print(f"\r[Hashing] Progress [{i}/{total}]", end="")
                 try:
                     path, file_hash = future.result()
                     if file_hash:
