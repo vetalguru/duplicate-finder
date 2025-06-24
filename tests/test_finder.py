@@ -89,7 +89,7 @@ def test_actual_deletion(temp_dir):
 
     finder = DuplicateFinder(temp_dir)
 
-    with patch("builtins.input", return_value="y"):
+    with patch("builtins.input", side_effect=["1"]):
         result = finder.run(delete=True, dry_run=False, interactive=True)
 
     remaining = [Path(p) for p in result[0]]
@@ -257,3 +257,23 @@ def test_no_deletion_prompt_if_no_duplicates(tmp_path, monkeypatch):
     finder.run(delete=True, interactive=True)
 
     assert not called, "Input() should not be called when no duplicates exist"
+
+
+def test_interactive_deletion_keep_first(tmp_path, monkeypatch, capsys):
+    f1 = tmp_path / "file1.txt"
+    f2 = tmp_path / "file2.txt"
+    f1.write_text("duplicate")
+    f2.write_text("duplicate")
+
+    finder = DuplicateFinder(tmp_path)
+    finder.run()
+
+    monkeypatch.setattr("builtins.input", lambda _: "1")
+
+    finder._interactive_deletion()
+
+    assert f1.exists()
+    assert not f2.exists()
+
+    out = capsys.readouterr().out
+    assert "Deleted:" in out

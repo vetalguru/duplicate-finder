@@ -267,8 +267,9 @@ class DuplicateFinder:
             except Exception as e:
                 print(f"ERROR: Failed to save report: {e}")
 
+
     def _interactive_deletion(self) -> None:
-        # Prompt user to manually choose which files to delete in each group
+        # Prompt user to choose which file to keep in each group
         print("\nInteractive duplicate cleanup started.")
         deleted_count = 0
 
@@ -277,26 +278,23 @@ class DuplicateFinder:
             for i, path in enumerate(group):
                 print(f"  [{i + 1}] {path}")
 
-            choice = (
-                input(
-                    "Select files to delete (e.g., 2 3),"
-                    " 'all', or press Enter to skip: "
-                )
-                .strip()
-                .lower()
-            )
-            if not choice:
-                continue
-            if choice == "all":
-                to_delete = group[1:]
-            else:
+            while True:
+                choice = input(
+                    f"Select the file to KEEP [1–{len(group)}], or press Enter to skip this group: "
+                ).strip()
+
+                if not choice:
+                    print("Skipped.")
+                    break
                 try:
-                    indices = [int(x) - 1 for x in choice.split()]
-                    to_delete = [group[i] for i in indices
-                                 if 0 <= i < len(group)]
+                    keep_index = int(choice) - 1
+                    if not (0 <= keep_index < len(group)):
+                        raise ValueError
+
+                    to_delete = group[:keep_index] + group[keep_index + 1:]
+                    break
                 except ValueError:
-                    print("Invalid input. Skipping group.")
-                    continue
+                    print("Invalid input. Please enter a number from the list.")
 
             for path in to_delete:
                 try:
