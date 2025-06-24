@@ -31,3 +31,8 @@ jobs:
     - name: Run tests
       run: |
         pytest
+        
+    - name: Build distribution package
+      run: |
+        pip install build
+        python -m build
