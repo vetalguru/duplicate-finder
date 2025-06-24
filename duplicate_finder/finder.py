@@ -114,7 +114,7 @@ class DuplicateFinder:
             except OSError:
                 print(f"\nATTENTION: Unable to access file: {path}")
 
-            print(f"\r[Size Scan] Progress[{i}/{total}]", end="")
+            print(f"\r[Size Scan] Progress [{i}/{total}]", end="")
 
         print("\nScanning finished")
         self.files_by_size = files_by_size
