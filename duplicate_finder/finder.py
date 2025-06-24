@@ -47,7 +47,7 @@ class DuplicateFinder:
 
         # Handle interactive or automatic deletion
         if interactive:
-            self._interactive_deletion()
+            self._interactive_deletion(report_path=delete_report)
         elif delete:
             confirm = "y"
             if not dry_run:
@@ -267,24 +267,29 @@ class DuplicateFinder:
             except Exception as e:
                 print(f"ERROR: Failed to save report: {e}")
 
-
-    def _interactive_deletion(self) -> None:
+    def _interactive_deletion(self, report_path: str | None = None) -> None:
         # Prompt user to choose which file to keep in each group
         print("\nInteractive duplicate cleanup started.")
         deleted_count = 0
+        report_lines = []
 
         for idx, group in enumerate(self.duplicates, start=1):
             print(f"\nGroup {idx} ({len(group)} files):")
             for i, path in enumerate(group):
                 print(f"  [{i + 1}] {path}")
 
+            to_delete = []
+
             while True:
                 choice = input(
-                    f"Select the file to KEEP [1–{len(group)}], or press Enter to skip this group: "
+                    f"Select the file to KEEP [1–{len(group)}],"
+                    f" or press Enter to skip this group: "
                 ).strip()
 
                 if not choice:
                     print("Skipped.")
+                    report_lines.append(f"Group {idx} skipped: "
+                                        f" {[str(p) for p in group]}")
                     break
                 try:
                     keep_index = int(choice) - 1
@@ -300,8 +305,19 @@ class DuplicateFinder:
                 try:
                     Path(path).unlink()
                     print(f"Deleted: {path}")
+                    report_lines.append(f"Deleted: {path}")
                     deleted_count += 1
                 except Exception as e:
                     print(f"ERROR: Could not delete {path}: {e}")
+                    report_lines.append(f"FAILED: {path} ({e})")
 
         print(f"\nTotal deleted interactively: {deleted_count}")
+
+        if report_path:
+            try:
+                with open(report_path, "w", encoding="utf-8") as f:
+                    f.write("Interactive Deletion Report\n" + "=" * 32 + "\n")
+                    f.writelines(line + "\n" for line in report_lines)
+                print(f"Report saved to: {report_path}")
+            except Exception as e:
+                print(f"ERROR: Failed to save report: {e}")
