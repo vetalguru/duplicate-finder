@@ -111,7 +111,7 @@ class DuplicateFinder:
 
             print(f"\r[Size Scan] Progress[{i}/{total}]", end="")
 
-        print("Scanning finished")
+        print("\nScanning finished")
         self.files_by_size = files_by_size
 
     def _group_by_hash(self, max_workers: int = 8) -> None:
