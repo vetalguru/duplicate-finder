@@ -10,7 +10,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class DuplicateFinder:
-    def __init__(self, folder_path: str, exclude_patterns=None):
+    def __init__(self,
+                 folder_path: str,
+                 exclude_patterns = None,
+                 min_size: str = "0B"):
         # Initialize target folder and exclusion list
         if exclude_patterns is None:
             exclude_patterns = []
@@ -19,6 +22,7 @@ class DuplicateFinder:
         self.files_by_size: dict[int, list[str]] = {}
         self.files_by_hash: dict[str, list[str]] = {}
         self.duplicates: list[list[str]] = []
+        self.min_size = self._parse_size(min_size)
 
     def run(
         self,
@@ -113,6 +117,11 @@ class DuplicateFinder:
 
             try:
                 size = path.stat().st_size
+
+                # Skip small files
+                if size < self.min_size:
+                    continue
+
                 files_by_size[size].append(str(path))
             except OSError:
                 print(f"\nATTENTION: Unable to access file: {path}")
@@ -158,6 +167,15 @@ class DuplicateFinder:
                           f" {future_to_path[future]}: {e}")
         print()
         self.files_by_hash = files_by_hash
+
+    @staticmethod
+    def _parse_size(size_str: str) -> int:
+        size_str = size_str.strip().upper()
+        units = {"B": 1, "K": 10**3, "M": 10**6, "G": 10**9}
+        for unit in units:
+            if size_str.endswith(unit):
+                return int(float(size_str[:-1]) * units[unit])
+        return int(size_str)
 
     def _find_duplicates(
         self, sort_by_group: bool = False, sort_by_size: bool = False

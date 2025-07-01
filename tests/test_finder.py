@@ -277,3 +277,16 @@ def test_interactive_deletion_keep_first(tmp_path, monkeypatch, capsys):
 
     out = capsys.readouterr().out
     assert "Deleted:" in out
+
+
+def test_min_size_filter(tmp_path):
+    small = tmp_path / "small.txt"
+    large1 = tmp_path / "file1.txt"
+    large2 = tmp_path / "file2.txt"
+    small.write_text("x")  # 1 byte
+    large1.write_text("big data")
+    large2.write_text("big data")
+
+    finder = DuplicateFinder(tmp_path, min_size="5")
+    duplicates = finder.run()
+    assert [group for group in finder.duplicates if small.name in group] == []
