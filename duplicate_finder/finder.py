@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 class DuplicateFinder:
     def __init__(self,
                  folder_path: str,
-                 exclude_patterns = None,
+                 exclude_patterns=None,
                  min_size: str = "0B"):
         # Initialize target folder and exclusion list
         if exclude_patterns is None:

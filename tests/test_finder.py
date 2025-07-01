@@ -288,5 +288,5 @@ def test_min_size_filter(tmp_path):
     large2.write_text("big data")
 
     finder = DuplicateFinder(tmp_path, min_size="5")
-    duplicates = finder.run()
+    finder.run()
     assert [group for group in finder.duplicates if small.name in group] == []
