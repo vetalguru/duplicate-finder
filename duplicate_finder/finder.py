@@ -13,13 +13,15 @@ class DuplicateFinder:
     def __init__(self,
                  folder_path: str,
                  exclude_patterns=None,
-                 min_size: str = "0B",
+                 include_patterns=None,
+                 min_size: str = None,
                  max_size: str = None):
         # Initialize target folder and exclusion list
         if exclude_patterns is None:
             exclude_patterns = []
         self.folder_path = Path(folder_path).resolve()
         self.exclude_patterns = exclude_patterns
+        self.include_patterns = include_patterns
         self.files_by_size: dict[int, list[str]] = {}
         self.files_by_hash: dict[str, list[str]] = {}
         self.duplicates: list[list[str]] = []
@@ -82,6 +84,17 @@ class DuplicateFinder:
             for pattern in self.exclude_patterns
         )
 
+    def _is_included(self, path: str) -> bool:
+        if not self.include_patterns:
+            # Enable all by default
+            return True
+
+        norm_path = Path(path).as_posix()
+        return any(
+            fnmatch.fnmatch(norm_path, pattern)
+            for pattern in self.include_patterns
+        )
+
     @staticmethod
     def _calc_file_hash(file_path: str, block_size=65536) -> str | None:
         # Compute SHA256 hash for a given file
@@ -115,6 +128,9 @@ class DuplicateFinder:
 
         for i, path in enumerate(files, 1):
             if self._is_excluded(str(path)):
+                continue
+
+            if not self._is_included(str(path)):
                 continue
 
             try:

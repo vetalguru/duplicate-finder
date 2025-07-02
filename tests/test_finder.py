@@ -96,7 +96,7 @@ def test_actual_deletion(temp_dir):
     remaining = [Path(p) for p in result[0]]
     assert any(p.exists() for p in remaining)
 
-    deleted = set([file1, file2]) - set(map(str, remaining))
+    deleted = {file1, file2} - set(map(str, remaining))
     for path in deleted:
         assert not Path(path).exists()
 
@@ -307,3 +307,41 @@ def test_filter_by_max_size(tmp_path):
     )
     duplicates = finder.run(dry_run=True)
     assert duplicates == []
+
+
+def test_group_by_size_include(tmp_path):
+    target = tmp_path / "target.log"
+    ignored = tmp_path / "ignored.txt"
+    for file in [target, ignored]:
+        file.write_bytes(b"x" * 100)
+
+    finder = DuplicateFinder(
+        folder_path=str(tmp_path),
+        include_patterns=["*.log"]
+    )
+    finder._group_by_size()
+
+    all_paths = [
+        Path(f) for files in finder.files_by_size.values() for f in files
+    ]
+    assert target in all_paths
+    assert ignored not in all_paths
+
+
+def test_group_by_size_exclude(tmp_path):
+    a = tmp_path / "a.log"
+    b = tmp_path / "b.log"
+    for file in [a, b]:
+        file.write_bytes(b"x" * 100)
+
+    finder = DuplicateFinder(
+        folder_path=str(tmp_path),
+        exclude_patterns=["*b.log"]
+    )
+    finder._group_by_size()
+
+    all_files = [
+        Path(f) for files in finder.files_by_size.values() for f in files
+    ]
+    assert a in all_files
+    assert b not in all_files

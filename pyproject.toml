@@ -1,6 +1,6 @@
 [project]
 name = "duplicate-finder"
-version = "1.3.2"
+version = "1.4.0"
 description = "Command-line tool to find and delete duplicate files"
 authors = [
     { name = "Vitalii Shkibtan", email = "vetalguru@gmail.com"}]

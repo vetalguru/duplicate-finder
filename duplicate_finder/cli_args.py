@@ -10,7 +10,9 @@ class ArgumentParserAdapter:
     def __init__(self):
         # Initialize the argument parser with a description
         self.parser = argparse.ArgumentParser(
-            description="Script to find and delete duplicates of the files"
+            prog="duplicate-finder",
+            description="Script to find and delete duplicates of the files",
+            formatter_class=argparse.RawTextHelpFormatter
         )
         self._add_arguments()
 
@@ -50,17 +52,32 @@ class ArgumentParserAdapter:
             help=(
                 "Optional: list of exclude patterns (supports wildcards).\n"
                 "Use Unix-style glob syntax:\n"
-                "  *.log          — exclude all .log files\n"
-                "  temp/*         — exclude files in any 'temp' subdirectory\n"
-                "  **/.git/**     — exclude everything inside .git folders"
+                "  *.log          - exclude all .log files\n"
+                "  temp/*         - exclude files in any 'temp' subdirectory\n"
+                "  **/.git/**     - exclude everything inside .git folders"
                 " (recursive)\n"
                 "Patterns are matched against full POSIX-style paths."
             ),
         )
         self.parser.add_argument(
+            "--include",
+            type=str,
+            nargs="*",
+            default=[],
+            help=(
+                "Optional: list of include patterns (supports wildcards).\n"
+                "Use Unix-style glob syntax:\n"
+                "  *.log          - include just .log files\n"
+                "  temp/*         - include files in any 'temp' subdirectory\n"
+                "  **/.git/**     - include everything inside .git"
+                " folders (recursive)\n"
+                "Patterns are matched against full POSIX-style paths."
+            )
+        )
+        self.parser.add_argument(
             "--delete",
             action="store_true",
-            help="Optional: delete duplicate files (keep first file in group)",
+            help="Optional: delete duplicate files (keep first file in group)"
         )
         self.parser.add_argument(
             "--delete-report",
