@@ -12,7 +12,8 @@ def main() -> None:
 
     finder = DuplicateFinder(args.folder_path,
                              exclude_patterns=args.exclude,
-                             min_size=args.min_size)
+                             min_size=args.min_size,
+                             max_size=args.max_size)
     finder.run(
         sort_by_group=args.sort_by_group_size,
         sort_by_size=args.sort_by_file_size,

@@ -13,7 +13,8 @@ class DuplicateFinder:
     def __init__(self,
                  folder_path: str,
                  exclude_patterns=None,
-                 min_size: str = "0B"):
+                 min_size: str = "0B",
+                 max_size: str = None):
         # Initialize target folder and exclusion list
         if exclude_patterns is None:
             exclude_patterns = []
@@ -22,7 +23,8 @@ class DuplicateFinder:
         self.files_by_size: dict[int, list[str]] = {}
         self.files_by_hash: dict[str, list[str]] = {}
         self.duplicates: list[list[str]] = []
-        self.min_size = self._parse_size(min_size)
+        self.min_size = self._parse_size(min_size) if min_size else None
+        self.max_size = self._parse_size(max_size) if max_size else None
 
     def run(
         self,
@@ -119,7 +121,11 @@ class DuplicateFinder:
                 size = path.stat().st_size
 
                 # Skip small files
-                if size < self.min_size:
+                if self.min_size and size < self.min_size:
+                    continue
+
+                # Skip big files
+                if self.max_size and size > self.max_size:
                     continue
 
                 files_by_size[size].append(str(path))

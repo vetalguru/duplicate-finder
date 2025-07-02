@@ -96,10 +96,17 @@ class ArgumentParserAdapter:
         self.parser.add_argument(
             "--min-size",
             type=str,
-            default="0B",
+            default=None,
             help="Minimum file size to consider for"
-                 " duplicate detection (e.g. 100K, 5M, 1G)."
-                 " Default: = 0B"
+                 " duplicate detection (e.g. 100K, 5M, 1G)"
+        )
+
+        self.parser.add_argument(
+            "--max-size",
+            type=str,
+            default=None,
+            help="Maximum file size to consider for"
+                 " duplicate detection (e.g. 100K, 5M, 1G)"
         )
 
     def parse(self) -> argparse.Namespace:
