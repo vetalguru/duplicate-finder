@@ -3,7 +3,7 @@
 # See LICENSE file in the project root for full license text.
 
 from .cli_args import ArgumentParserAdapter
-from .finder import DuplicateFinder
+from .duplicate_finder import DuplicateFinder
 
 
 def main() -> None:

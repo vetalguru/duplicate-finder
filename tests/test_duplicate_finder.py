@@ -8,7 +8,7 @@ import sys
 import os
 import pytest
 from pathlib import Path
-from duplicate_finder.finder import DuplicateFinder
+from duplicate_finder.duplicate_finder import DuplicateFinder
 from unittest.mock import patch
 
 
