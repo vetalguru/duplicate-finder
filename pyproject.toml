@@ -1,21 +1,20 @@
 [project]
 name = "duplicate-finder"
-version = "1.0.0"
+version = "1.3.2"
 description = "Command-line tool to find and delete duplicate files"
 authors = [
     { name = "Vitalii Shkibtan", email = "vetalguru@gmail.com"}]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["duplicates", "filesystem", "cli", "deduplication"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: End Users/Desktop",
-    "Topic :: Utilities",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12"
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: End Users/Desktop",
+  "Topic :: Utilities",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12"
 ]
 
 [project.scripts]
@@ -36,5 +35,9 @@ addopts = "-ra"
 testpaths = [
   "tests"
 ]
+
 python_files = "test_*.py"
 
+[tool.setuptools.packages.find]
+include = ["duplicate_finder"]
+exclude = ["assets"]
