@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/duplicate-finder_t.png" alt="Duplicate Finder Logo" width="200">
+</p>
+
 # Duplicate Finder
 
 A **command-line tool** to efficiently find and delete duplicate files in a given folder.
