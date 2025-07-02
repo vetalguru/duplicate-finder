@@ -114,7 +114,7 @@ class ArgumentParserAdapter:
             "--min-size",
             type=str,
             default=None,
-            help="Minimum file size to consider for"
+            help="Optional: Minimum file size to consider for"
                  " duplicate detection (e.g. 100K, 5M, 1G)"
         )
 
@@ -122,7 +122,7 @@ class ArgumentParserAdapter:
             "--max-size",
             type=str,
             default=None,
-            help="Maximum file size to consider for"
+            help="Optional: Maximum file size to consider for"
                  " duplicate detection (e.g. 100K, 5M, 1G)"
         )
 
