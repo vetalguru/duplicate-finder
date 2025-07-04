@@ -3,10 +3,10 @@
 # See LICENSE file in the project root for full license text.
 
 import fnmatch
-import hashlib
 from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from duplicate_finder import utils as utils
 
 
 class DuplicateFinder:
@@ -95,19 +95,6 @@ class DuplicateFinder:
             for pattern in self.include_patterns
         )
 
-    @staticmethod
-    def _calc_file_hash(file_path: str, block_size=65536) -> str | None:
-        # Compute SHA256 hash for a given file
-        sha256 = hashlib.sha256()
-        try:
-            with open(file_path, "rb") as f:
-                while chunk := f.read(block_size):
-                    sha256.update(chunk)
-            return sha256.hexdigest()
-        except IOError:
-            print(f"ERROR: Unable to read file: {file_path}")
-            return None
-
     def _group_by_size(self) -> None:
         # Group all files by their size
         if not self.folder_path.is_dir():
@@ -169,7 +156,7 @@ class DuplicateFinder:
         files_by_hash = defaultdict(list)
 
         def hash_worker(path):
-            return path, self._calc_file_hash(path)
+                return path, utils.calc_file_sha256(path)
 
         # Parallel hashing by using threads
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
