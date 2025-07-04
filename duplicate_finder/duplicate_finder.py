@@ -25,8 +25,10 @@ class DuplicateFinder:
         self.files_by_size: dict[int, list[str]] = {}
         self.files_by_hash: dict[str, list[str]] = {}
         self.duplicates: list[list[str]] = []
-        self.min_size = self._parse_size(min_size) if min_size else None
-        self.max_size = self._parse_size(max_size) if max_size else None
+        self.min_size = utils.str_file_size_to_int(min_size) \
+            if min_size else None
+        self.max_size = utils.str_file_size_to_int(max_size) \
+            if max_size else None
 
     def run(
         self,
@@ -176,15 +178,6 @@ class DuplicateFinder:
                           f" {future_to_path[future]}: {e}")
         print()
         self.files_by_hash = files_by_hash
-
-    @staticmethod
-    def _parse_size(size_str: str) -> int:
-        size_str = size_str.strip().upper()
-        units = {"B": 1, "K": 10**3, "M": 10**6, "G": 10**9}
-        for unit in units:
-            if size_str.endswith(unit):
-                return int(float(size_str[:-1]) * units[unit])
-        return int(size_str)
 
     def _find_duplicates(
         self, sort_by_group: bool = False, sort_by_size: bool = False
