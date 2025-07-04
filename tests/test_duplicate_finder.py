@@ -148,13 +148,6 @@ def test_report_saving(temp_dir):
     assert str(file1) in text and str(file2) in text
 
 
-def test_human_readable_size():
-    assert DuplicateFinder._human_readable_size(0) == "0.0 B"
-    assert DuplicateFinder._human_readable_size(1023) == "1023.0 B"
-    assert DuplicateFinder._human_readable_size(1024) == "1.0 KB"
-    assert DuplicateFinder._human_readable_size(1024**2) == "1.0 MB"
-
-
 @pytest.mark.skipif(
     os.name != "posix", reason="chmod 000 works correctly just in POSIX"
 )

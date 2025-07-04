@@ -56,3 +56,27 @@ def str_file_size_to_int(size_str: str) -> int:
     if unit not in units:
         raise ValueError(f"Unknown size unit: {unit}")
     return int(float(number) * units[unit])
+
+
+def humanize_size(size_bytes: int) -> str:
+    """
+    Convert a file size in bytes to a human-readable string (e.g., '1.2 MB').
+
+    Args:
+        size_bytes (int): The size in bytes.
+
+    Returns:
+        str: Human-readable file size, or 'Invalid size' for invalid input.
+    """
+    if (size_bytes is None or
+            not isinstance(size_bytes, (int, float)) or size_bytes < 0):
+        return "Invalid size"
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if size_bytes < 1024:
+            return (
+                f"{int(size_bytes)} {unit}"
+                if unit == "B"
+                else f"{size_bytes:.1f} {unit}"
+            )
+        size_bytes /= 1024
+    return f"{size_bytes:.1f} PB"

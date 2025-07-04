@@ -158,7 +158,7 @@ class DuplicateFinder:
         files_by_hash = defaultdict(list)
 
         def hash_worker(path):
-                return path, utils.calc_file_sha256(path)
+            return path, utils.calc_file_sha256(path)
 
         # Parallel hashing by using threads
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -193,15 +193,6 @@ class DuplicateFinder:
             groups.sort(key=lambda g: Path(g[0]).stat().st_size, reverse=True)
         self.duplicates = groups
 
-    @staticmethod
-    def _human_readable_size(size_bytes: int) -> str:
-        # Convert byte size into human-readable format
-        for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if size_bytes < 1024:
-                return f"{size_bytes:.1f} {unit}"
-            size_bytes /= 1024
-        return f"{size_bytes:.1f} PB"
-
     def _print_duplicates(self) -> None:
         # Print found duplicates in grouped format
         if not self.duplicates:
@@ -213,7 +204,7 @@ class DuplicateFinder:
             size = Path(group[0]).stat().st_size
             print(
                 f"\nGroup {idx} ({len(group)}"
-                f" file(s), size: {self._human_readable_size(size)}):"
+                f" file(s), size: {utils.humanize_size(size)}):"
             )
             for path in group:
                 print(f"  - {path}")
@@ -273,7 +264,7 @@ class DuplicateFinder:
         print(
             f"Total"
             f" {'freed' if not dry_run else 'possible freed'}"
-            f" size: {self._human_readable_size(total_deleted_size)}"
+            f" ({utils.humanize_size(total_deleted_size)})"
         )
 
         # Write deletion report if requested
