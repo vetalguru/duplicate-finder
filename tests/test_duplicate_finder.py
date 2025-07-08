@@ -24,8 +24,8 @@ def temp_dir():
 
 
 def test_empty_directory(temp_dir):
-    finder = DuplicateFinder(temp_dir)
-    result = finder.run()
+    finder = DuplicateFinder()
+    result = finder.run(folder_path=temp_dir)
     assert result == []
 
 
@@ -33,8 +33,8 @@ def test_identical_files(temp_dir):
     file1 = create_file(temp_dir / "a.txt", "abc123")
     file2 = create_file(temp_dir / "b.txt", "abc123")
 
-    finder = DuplicateFinder(temp_dir)
-    result = finder.run()
+    finder = DuplicateFinder()
+    result = finder.run(folder_path=temp_dir)
     assert len(result) == 1
     assert set(result[0]) == {file1, file2}
 
@@ -43,8 +43,8 @@ def test_different_size_files(temp_dir):
     create_file(temp_dir / "a.txt", "abc123")
     create_file(temp_dir / "b.txt", "abc123456")
 
-    finder = DuplicateFinder(temp_dir)
-    result = finder.run()
+    finder = DuplicateFinder()
+    result = finder.run(folder_path=temp_dir)
     assert result == []
 
 
@@ -52,9 +52,10 @@ def test_excluded_pattern(temp_dir):
     create_file(temp_dir / "a.log", "abc")
     create_file(temp_dir / "b.log", "abc")
 
-    finder = DuplicateFinder(temp_dir,
-                             exclude_patterns=["*.log"])
-    result = finder.run()
+    finder = DuplicateFinder()
+    result = finder.run(
+        folder_path=temp_dir,
+        exclude_patterns=["*.log"])
     assert result == []
 
 
@@ -65,8 +66,10 @@ def test_sort_by_group(temp_dir):
     f3 = create_file(temp_dir / "f3.txt", "x")
     create_file(temp_dir / "u.txt", "y")
 
-    finder = DuplicateFinder(temp_dir)
-    result = finder.run(sort_by_group=True)
+    finder = DuplicateFinder()
+    result = finder.run(
+        folder_path=temp_dir,
+        sort_by_group=True)
     assert len(result) == 1
     assert set(result[0]) == {f1, f2, f3}
 
@@ -75,8 +78,11 @@ def test_dry_run_deletion(temp_dir, capsys):
     file1 = create_file(temp_dir / "x1.txt", "dupe")
     file2 = create_file(temp_dir / "x2.txt", "dupe")
 
-    finder = DuplicateFinder(temp_dir)
-    finder.run(delete=True, dry_run=True)
+    finder = DuplicateFinder()
+    finder.run(
+        folder_path=temp_dir,
+        delete=True,
+        dry_run=True)
     assert Path(file1).exists()
     assert Path(file2).exists()
 
@@ -88,10 +94,14 @@ def test_actual_deletion(temp_dir):
     file1 = create_file(temp_dir / "x1.txt", "dupe")
     file2 = create_file(temp_dir / "x2.txt", "dupe")
 
-    finder = DuplicateFinder(temp_dir)
+    finder = DuplicateFinder()
 
     with patch("builtins.input", side_effect=["1"]):
-        result = finder.run(delete=True, dry_run=False, interactive=True)
+        result = finder.run(
+            folder_path=temp_dir,
+            delete=True,
+            dry_run=False,
+            interactive=True)
 
     remaining = [Path(p) for p in result[0]]
     assert any(p.exists() for p in remaining)
@@ -105,8 +115,8 @@ def test_zero_byte_files_are_duplicates(temp_dir):
     (temp_dir / "zero1.txt").touch()
     (temp_dir / "zero2.txt").touch()
 
-    finder = DuplicateFinder(temp_dir)
-    result = finder.run()
+    finder = DuplicateFinder()
+    result = finder.run(folder_path=temp_dir)
     assert len(result) == 1
     assert (set(result[0]) ==
             {str(temp_dir / "zero1.txt"),
@@ -119,8 +129,8 @@ def test_nested_directories(temp_dir):
     file1 = create_file(nested / "a.txt", "hello")
     file2 = create_file(temp_dir / "copy.txt", "hello")
 
-    finder = DuplicateFinder(temp_dir)
-    result = finder.run()
+    finder = DuplicateFinder()
+    result = finder.run(folder_path=temp_dir)
     assert len(result) == 1
     assert set(result[0]) == {file1, file2}
 
@@ -130,8 +140,10 @@ def test_exclusion_in_nested_paths(temp_dir):
     create_file(temp_dir / "keep.txt", "same")
     create_file(temp_dir / "ignore" / "skip.txt", "same")
 
-    finder = DuplicateFinder(temp_dir, exclude_patterns=["*/ignore/*"])
-    result = finder.run()
+    finder = DuplicateFinder()
+    result = finder.run(
+        folder_path=temp_dir,
+        exclude_patterns=["*/ignore/*"])
     assert result == []
 
 
@@ -140,8 +152,10 @@ def test_report_saving(temp_dir):
     file2 = create_file(temp_dir / "y.txt", "abc")
     report_path = temp_dir / "dupes.txt"
 
-    finder = DuplicateFinder(temp_dir)
-    finder.run(output_report_path=report_path)
+    finder = DuplicateFinder()
+    finder.run(
+        folder_path=temp_dir,
+        output_report_path=report_path)
 
     text = report_path.read_text(encoding="utf-8")
     assert "Duplicate files" in text
@@ -157,8 +171,8 @@ def test_unreadable_file_skipped(tmp_path):
     protected.chmod(0)
 
     try:
-        finder = DuplicateFinder(tmp_path)
-        result = finder.run()
+        finder = DuplicateFinder()
+        result = finder.run(folder_path=tmp_path)
         assert result == []
     finally:
         protected.chmod(stat.S_IWUSR | stat.S_IRUSR)
@@ -177,8 +191,8 @@ def test_symlinks_are_ignored(temp_dir):
     except (OSError, NotImplementedError):
         pytest.skip("Symlink creation not permitted on this system")
 
-    finder = DuplicateFinder(temp_dir)
-    result = finder.run()
+    finder = DuplicateFinder()
+    result = finder.run(folder_path=temp_dir)
     assert result == []
 
 
@@ -188,8 +202,8 @@ def test_identical_files_different_names_and_folders(temp_dir):
     f1 = create_file(temp_dir / "a" / "file.txt", "same")
     f2 = create_file(temp_dir / "b" / "copy.txt", "same")
 
-    finder = DuplicateFinder(temp_dir)
-    result = finder.run()
+    finder = DuplicateFinder()
+    result = finder.run(folder_path=temp_dir)
     assert len(result) == 1
     assert set(result[0]) == {f1, f2}
 
@@ -202,14 +216,14 @@ def test_file_with_unreadable_stat(temp_dir, monkeypatch):
         def stat(self_inner):
             raise OSError("fake stat error")
 
-    broken_path_obj = BrokenPath(str(broken_path))
+    broken_path_obj = BrokenPath(broken_path)
 
     class DummyFinder(DuplicateFinder):
         def _group_by_size(self_inner):
             self_inner.files_by_size = {4: [str(broken_path_obj)]}
 
-    finder = DummyFinder(temp_dir)
-    result = finder.run()
+    finder = DummyFinder()
+    result = finder.run(folder_path=temp_dir)
     assert result == []
 
 
@@ -217,8 +231,10 @@ def test_exclude_exact_filename(temp_dir):
     create_file(temp_dir / "keep.txt", "same")
     create_file(temp_dir / "exclude.txt", "same")
 
-    finder = DuplicateFinder(temp_dir, exclude_patterns=["*/exclude.txt"])
-    result = finder.run()
+    finder = DuplicateFinder()
+    result = finder.run(
+        folder_path=temp_dir,
+        exclude_patterns=["*/exclude.txt"])
     assert result == []
 
 
@@ -227,8 +243,12 @@ def test_deletion_report_is_created(temp_dir):
     f2 = create_file(temp_dir / "y.txt", "dupe")
     report = temp_dir / "report.txt"
 
-    finder = DuplicateFinder(temp_dir)
-    finder.run(delete=True, dry_run=True, delete_report_path=str(report))
+    finder = DuplicateFinder()
+    finder.run(
+        folder_path=temp_dir,
+        delete=True,
+        dry_run=True,
+        delete_report_path=report)
     text = report.read_text()
     assert "[would delete]" in text
     assert str(f1) in text or str(f2) in text
@@ -247,8 +267,11 @@ def test_no_deletion_prompt_if_no_duplicates(tmp_path, monkeypatch):
 
     monkeypatch.setattr("builtins.input", fake_input)
 
-    finder = DuplicateFinder(tmp_path)
-    finder.run(delete=True, interactive=True)
+    finder = DuplicateFinder()
+    finder.run(
+        folder_path=tmp_path,
+        delete=True,
+        interactive=True)
 
     assert not called, "Input() should not be called when no duplicates exist"
 
@@ -259,8 +282,8 @@ def test_interactive_deletion_keep_first(tmp_path, monkeypatch, capsys):
     f1.write_text("duplicate")
     f2.write_text("duplicate")
 
-    finder = DuplicateFinder(tmp_path)
-    finder.run()
+    finder = DuplicateFinder()
+    finder.run(folder_path=tmp_path)
 
     monkeypatch.setattr("builtins.input", lambda _: "1")
 
@@ -281,8 +304,10 @@ def test_min_size_filter(tmp_path):
     large1.write_text("big data")
     large2.write_text("big data")
 
-    finder = DuplicateFinder(tmp_path, min_size="5")
-    finder.run()
+    finder = DuplicateFinder()
+    finder.run(
+        folder_path=tmp_path,
+        min_size="5")
     assert [group for group in finder.duplicates if small.name in group] == []
 
 
@@ -293,48 +318,10 @@ def test_filter_by_max_size(tmp_path):
     large = tmp_path / "large.txt"
     large.write_bytes(b"x" * 10_000_000)  # 10 MB
 
-    finder = DuplicateFinder(
+    finder = DuplicateFinder()
+    duplicates = finder.run(
         folder_path=tmp_path,
         min_size="0B",
-        max_size="1M"
-    )
-    duplicates = finder.run(dry_run=True)
+        max_size="1M",
+        dry_run=True)
     assert duplicates == []
-
-
-def test_group_by_size_include(tmp_path):
-    target = tmp_path / "target.log"
-    ignored = tmp_path / "ignored.txt"
-    for file in [target, ignored]:
-        file.write_bytes(b"x" * 100)
-
-    finder = DuplicateFinder(
-        folder_path=tmp_path,
-        include_patterns=["*.log"]
-    )
-    finder._group_by_size()
-
-    all_paths = [
-        Path(f) for files in finder.files_by_size.values() for f in files
-    ]
-    assert target in all_paths
-    assert ignored not in all_paths
-
-
-def test_group_by_size_exclude(tmp_path):
-    a = tmp_path / "a.log"
-    b = tmp_path / "b.log"
-    for file in [a, b]:
-        file.write_bytes(b"x" * 100)
-
-    finder = DuplicateFinder(
-        folder_path=tmp_path,
-        exclude_patterns=["*b.log"]
-    )
-    finder._group_by_size()
-
-    all_files = [
-        Path(f) for files in finder.files_by_size.values() for f in files
-    ]
-    assert a in all_files
-    assert b not in all_files

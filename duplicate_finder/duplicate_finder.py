@@ -10,28 +10,32 @@ from duplicate_finder import utils as utils
 
 
 class DuplicateFinder:
-    def __init__(self,
-                 folder_path: Path,
-                 exclude_patterns=None,
-                 include_patterns=None,
-                 min_size: str = None,
-                 max_size: str = None):
+    def __init__(self):
         # Initialize target folder and exclusion list
-        if exclude_patterns is None:
-            exclude_patterns = []
-        self.folder_path = folder_path.resolve()
-        self.exclude_patterns = exclude_patterns
-        self.include_patterns = include_patterns
+        self.folder_path = Path
+        self.exclude_patterns = None
+        self.include_patterns = None
         self.files_by_size: dict[int, list[Path]] = {}
         self.files_by_hash: dict[str, list[Path]] = {}
         self.duplicates: list[list[Path]] = []
-        self.min_size = utils.str_file_size_to_int(min_size) \
-            if min_size else None
-        self.max_size = utils.str_file_size_to_int(max_size) \
-            if max_size else None
+        self.min_size = None
+        self.max_size = None
+        self.sort_by_group = False
+        self.sort_by_size = False
+        self.output_report_path = None
+        self.delete = False
+        self.dry_run = False
+        self.interactive = False
+        self.delete_report_path = None
+        self.threads = 8  # Default number of threads for parallel processing
 
     def run(
         self,
+        folder_path: Path,
+        exclude_patterns=None,
+        include_patterns=None,
+        min_size: str = None,
+        max_size: str = None,
         sort_by_group: bool = False,
         sort_by_size: bool = False,
         output_report_path: Path | None = None,
@@ -42,6 +46,20 @@ class DuplicateFinder:
         threads: int = 8,
     ) -> list[list[str]]:
         # Perform the full duplicate detection workflow
+        self.folder_path = folder_path.resolve()
+        self.exclude_patterns = exclude_patterns or []
+        self.include_patterns = include_patterns or []
+        self.min_size = utils.str_file_size_to_int(min_size) \
+            if min_size else None
+        self.max_size = utils.str_file_size_to_int(max_size) \
+            if max_size else None
+
+        # Clear previous results
+        self.files_by_size.clear()
+        self.files_by_hash.clear()
+        self.duplicates.clear()
+
+        print(f"Scanning folder: {self.folder_path}")
         self._group_by_size()
         self._group_by_hash(max_workers=threads)
         self._find_duplicates(
