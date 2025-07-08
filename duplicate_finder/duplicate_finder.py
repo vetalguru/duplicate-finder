@@ -22,9 +22,9 @@ class DuplicateFinder:
         self.folder_path = folder_path.resolve()
         self.exclude_patterns = exclude_patterns
         self.include_patterns = include_patterns
-        self.files_by_size: dict[int, list[str]] = {}
-        self.files_by_hash: dict[str, list[str]] = {}
-        self.duplicates: list[list[str]] = []
+        self.files_by_size: dict[int, list[Path]] = {}
+        self.files_by_hash: dict[str, list[Path]] = {}
+        self.duplicates: list[list[Path]] = []
         self.min_size = utils.str_file_size_to_int(min_size) \
             if min_size else None
         self.max_size = utils.str_file_size_to_int(max_size) \
@@ -78,20 +78,20 @@ class DuplicateFinder:
 
         return self.duplicates
 
-    def _is_excluded(self, path: str) -> bool:
+    def _is_excluded(self, path: Path) -> bool:
         # Check if a file path matches any exclusion pattern
-        norm_path = Path(path).as_posix()
+        norm_path = path.as_posix()
         return any(
             fnmatch.fnmatch(norm_path, pattern)
             for pattern in self.exclude_patterns
         )
 
-    def _is_included(self, path: str) -> bool:
+    def _is_included(self, path: Path) -> bool:
         if not self.include_patterns:
             # Enable all by default
             return True
 
-        norm_path = Path(path).as_posix()
+        norm_path = path.as_posix()
         return any(
             fnmatch.fnmatch(norm_path, pattern)
             for pattern in self.include_patterns
@@ -116,10 +116,10 @@ class DuplicateFinder:
         total = len(files)
 
         for i, path in enumerate(files, 1):
-            if self._is_excluded(str(path)):
+            if self._is_excluded(path):
                 continue
 
-            if not self._is_included(str(path)):
+            if not self._is_included(path):
                 continue
 
             try:
