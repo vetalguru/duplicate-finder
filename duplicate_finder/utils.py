@@ -4,9 +4,10 @@
 
 import hashlib
 import re
+from pathlib import Path
 
 
-def calc_file_sha256(file_path: str, block_size: int = 65536) -> str:
+def calc_file_sha256(file_path: Path, block_size: int = 65536) -> str:
     """Compute SHA256 hash for a given file."""
     sha256 = hashlib.sha256()
     with open(file_path, "rb") as f:
