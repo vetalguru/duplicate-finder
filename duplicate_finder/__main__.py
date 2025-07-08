@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 # See LICENSE file in the project root for full license text.
 
+from pathlib import Path
 from .cli_args import ArgumentParserAdapter
 from .duplicate_finder import DuplicateFinder
 
@@ -10,7 +11,7 @@ def main() -> None:
     # Parse command-line arguments (folder path, flags, etc.)
     args = ArgumentParserAdapter().parse()
 
-    finder = DuplicateFinder(args.folder_path,
+    finder = DuplicateFinder(Path(args.folder_path),
                              exclude_patterns=args.exclude,
                              include_patterns=args.include,
                              min_size=args.min_size,

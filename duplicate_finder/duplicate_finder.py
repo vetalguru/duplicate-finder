@@ -11,7 +11,7 @@ from duplicate_finder import utils as utils
 
 class DuplicateFinder:
     def __init__(self,
-                 folder_path: str,
+                 folder_path: Path,
                  exclude_patterns=None,
                  include_patterns=None,
                  min_size: str = None,
@@ -19,7 +19,7 @@ class DuplicateFinder:
         # Initialize target folder and exclusion list
         if exclude_patterns is None:
             exclude_patterns = []
-        self.folder_path = Path(folder_path).resolve()
+        self.folder_path = folder_path.resolve()
         self.exclude_patterns = exclude_patterns
         self.include_patterns = include_patterns
         self.files_by_size: dict[int, list[str]] = {}
