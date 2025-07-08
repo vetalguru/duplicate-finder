@@ -34,7 +34,7 @@ class DuplicateFinder:
         self,
         sort_by_group: bool = False,
         sort_by_size: bool = False,
-        output_path: str | None = None,
+        output_report_path: str | None = None,
         delete: bool = False,
         dry_run: bool = False,
         interactive: bool = False,
@@ -52,8 +52,8 @@ class DuplicateFinder:
         if not self.duplicates:
             return self.duplicates
 
-        if output_path:
-            self._save_to_file(output_path)
+        if output_report_path:
+            self._save_to_file(output_report_path)
 
         # Handle interactive or automatic deletion
         if interactive:

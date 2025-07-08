@@ -19,7 +19,7 @@ def main() -> None:
     finder.run(
         sort_by_group=args.sort_by_group_size,
         sort_by_size=args.sort_by_file_size,
-        output_path=args.output,
+        output_report_path=args.output,
         delete=args.delete,
         interactive=args.interactive,
         dry_run=args.dry_run,
