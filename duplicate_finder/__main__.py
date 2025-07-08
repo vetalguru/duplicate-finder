@@ -23,7 +23,7 @@ def main() -> None:
         delete=args.delete,
         interactive=args.interactive,
         dry_run=args.dry_run,
-        delete_report=args.delete_report,
+        delete_report_path=args.delete_report,
         threads=args.threads,
     )
 

@@ -228,7 +228,7 @@ def test_deletion_report_is_created(temp_dir):
     report = temp_dir / "report.txt"
 
     finder = DuplicateFinder(temp_dir)
-    finder.run(delete=True, dry_run=True, delete_report=str(report))
+    finder.run(delete=True, dry_run=True, delete_report_path=str(report))
     text = report.read_text()
     assert "[would delete]" in text
     assert str(f1) in text or str(f2) in text

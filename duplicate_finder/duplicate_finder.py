@@ -38,7 +38,7 @@ class DuplicateFinder:
         delete: bool = False,
         dry_run: bool = False,
         interactive: bool = False,
-        delete_report: str | None = None,
+        delete_report_path: str | None = None,
         threads: int = 8,
     ) -> list[list[str]]:
         # Perform the full duplicate detection workflow
@@ -57,7 +57,7 @@ class DuplicateFinder:
 
         # Handle interactive or automatic deletion
         if interactive:
-            self._interactive_deletion(report_path=delete_report)
+            self._interactive_deletion(report_path=delete_report_path)
         elif delete:
             confirm = "y"
             if not dry_run:
@@ -72,7 +72,7 @@ class DuplicateFinder:
             if confirm == "y":
                 self._delete_duplicates(
                     dry_run=dry_run,
-                    report_path=delete_report)
+                    report_path=delete_report_path)
             else:
                 print("Deletion cancelled.")
 
