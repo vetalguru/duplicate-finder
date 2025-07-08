@@ -38,7 +38,7 @@ class DuplicateFinder:
         delete: bool = False,
         dry_run: bool = False,
         interactive: bool = False,
-        delete_report_path: str | None = None,
+        delete_report_path: Path | None = None,
         threads: int = 8,
     ) -> list[list[str]]:
         # Perform the full duplicate detection workflow
@@ -227,7 +227,7 @@ class DuplicateFinder:
             print(f"\nERROR: Failed to save to file {output_path}: {e}")
 
     def _delete_duplicates(
-        self, dry_run: bool = False, report_path: str | None = None
+        self, dry_run: bool = False, report_path: Path | None = None
     ) -> None:
         # Delete all duplicates (keeping first file
         # in each group), optionally save report
@@ -278,7 +278,7 @@ class DuplicateFinder:
             except Exception as e:
                 print(f"ERROR: Failed to save report: {e}")
 
-    def _interactive_deletion(self, report_path: str | None = None) -> None:
+    def _interactive_deletion(self, report_path: Path | None = None) -> None:
         # Prompt user to choose which file to keep in each group
         print("\nInteractive duplicate cleanup started.")
         deleted_count = 0
