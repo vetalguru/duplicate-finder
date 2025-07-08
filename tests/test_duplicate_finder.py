@@ -141,7 +141,7 @@ def test_report_saving(temp_dir):
     report_path = temp_dir / "dupes.txt"
 
     finder = DuplicateFinder(temp_dir)
-    finder.run(output_report_path=str(report_path))
+    finder.run(output_report_path=report_path)
 
     text = report_path.read_text(encoding="utf-8")
     assert "Duplicate files" in text

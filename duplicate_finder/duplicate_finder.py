@@ -34,7 +34,7 @@ class DuplicateFinder:
         self,
         sort_by_group: bool = False,
         sort_by_size: bool = False,
-        output_report_path: str | None = None,
+        output_report_path: Path | None = None,
         delete: bool = False,
         dry_run: bool = False,
         interactive: bool = False,
@@ -209,10 +209,10 @@ class DuplicateFinder:
             for path in group:
                 print(f"  - {path}")
 
-    def _save_to_file(self, output_path: str) -> None:
+    def _save_to_file(self, output_report_path: Path) -> None:
         # Save duplicate report to a specified file
         try:
-            with open(output_path, "w", encoding="utf-8") as f:
+            with open(output_report_path, "w", encoding="utf-8") as f:
                 f.write("Duplicate files:\n")
                 for idx, group in enumerate(self.duplicates, 1):
                     size = Path(group[0]).stat().st_size
@@ -222,9 +222,9 @@ class DuplicateFinder:
                     )
                     for path in group:
                         f.write(f"  - {path}\n")
-            print(f"\nSaved results to: {output_path}")
+            print(f"\nSaved results to: {output_report_path}")
         except Exception as e:
-            print(f"\nERROR: Failed to save to file {output_path}: {e}")
+            print(f"\nERROR: Failed to save to file {output_report_path}: {e}")
 
     def _delete_duplicates(
         self, dry_run: bool = False, report_path: Path | None = None
