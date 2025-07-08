@@ -30,7 +30,7 @@ Source = "https://github.com/vetalguru/duplicate-finder"
 Issues = "https://github.com/vetalguru/duplicate-finder/issues"
 
 [tool.pytest.ini_options]
-minversion = "8.0"
+minversion = "7.4"
 addopts = "-ra"
 testpaths = [
   "tests"
@@ -41,3 +41,11 @@ python_files = "test_*.py"
 [tool.setuptools.packages.find]
 include = ["duplicate_finder"]
 exclude = ["assets"]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "flake8",
+  "build"
+]
