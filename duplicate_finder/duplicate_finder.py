@@ -44,14 +44,16 @@ class DuplicateFinder:
         interactive: bool = False,
         delete_report_path: Path | None = None,
         threads: int = 8,
-    ) -> list[list[str]]:
+    ) -> list[list[Path]]:
         # Perform the full duplicate detection workflow
         self.folder_path = folder_path.resolve()
         self.exclude_patterns = exclude_patterns or []
         self.include_patterns = include_patterns or []
-        self.min_size = utils.str_file_size_to_int(min_size) \
+        self.min_size = (
+            utils.str_file_size_to_int(min_size)) \
             if min_size else None
-        self.max_size = utils.str_file_size_to_int(max_size) \
+        self.max_size = (
+            utils.str_file_size_to_int(max_size)) \
             if max_size else None
 
         # Clear previous results
@@ -96,24 +98,23 @@ class DuplicateFinder:
 
         return self.duplicates
 
-    def _is_excluded(self, path: Path) -> bool:
+    @staticmethod
+    def _is_excluded(path: Path, patterns: list[str] | None) -> bool:
+        if not patterns:
+            # No exclusions mean everything is included
+            return False
         # Check if a file path matches any exclusion pattern
         norm_path = path.as_posix()
-        return any(
-            fnmatch.fnmatch(norm_path, pattern)
-            for pattern in self.exclude_patterns
-        )
+        return any(fnmatch.fnmatch(norm_path, pattern) for pattern in patterns)
 
-    def _is_included(self, path: Path) -> bool:
-        if not self.include_patterns:
-            # Enable all by default
+    @staticmethod
+    def _is_included(path: Path, patterns: list[str] | None) -> bool:
+        if not patterns:
+            # No inclusions mean everything is included
             return True
 
         norm_path = path.as_posix()
-        return any(
-            fnmatch.fnmatch(norm_path, pattern)
-            for pattern in self.include_patterns
-        )
+        return any(fnmatch.fnmatch(norm_path, pattern) for pattern in patterns)
 
     def _group_by_size(self) -> None:
         # Group all files by their size
@@ -134,10 +135,10 @@ class DuplicateFinder:
         total = len(files)
 
         for i, path in enumerate(files, 1):
-            if self._is_excluded(path):
+            if self._is_excluded(path, self.exclude_patterns):
                 continue
 
-            if not self._is_included(path):
+            if not self._is_included(path, self.include_patterns):
                 continue
 
             try:
@@ -181,9 +182,8 @@ class DuplicateFinder:
         # Parallel hashing by using threads
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_path = {
-                executor.submit(
-                    hash_worker, path):
-                        path for path in files_to_hash
+                executor.submit(hash_worker, path):
+                    path for path in files_to_hash
             }
             for i, future in enumerate(as_completed(future_to_path), 1):
                 print(f"\r[Hashing] Progress [{i}/{total}]", end="")
@@ -317,8 +317,9 @@ class DuplicateFinder:
 
                 if not choice:
                     print("Skipped.")
-                    report_lines.append(f"Group {idx} skipped: "
-                                        f" {[str(p) for p in group]}")
+                    report_lines.append(
+                        f"Group {idx} skipped: " f" {[str(p) for p in group]}"
+                    )
                     break
                 try:
                     keep_index = int(choice) - 1
