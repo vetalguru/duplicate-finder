@@ -45,6 +45,9 @@ class DuplicateFinder:
         delete_report_path: Path | None = None,
         threads: int = 8,
     ) -> list[list[Path]]:
+        # Clear internal state before running
+        self._clear_results()
+
         # Perform the full duplicate detection workflow
         self.folder_path = folder_path.resolve()
         self.exclude_patterns = exclude_patterns or []
@@ -55,11 +58,6 @@ class DuplicateFinder:
         self.max_size = (
             utils.str_file_size_to_int(max_size)) \
             if max_size else None
-
-        # Clear previous results
-        self.files_by_size.clear()
-        self.files_by_hash.clear()
-        self.duplicates.clear()
 
         print(f"Scanning folder: {self.folder_path}")
         self._group_by_size()
@@ -97,6 +95,12 @@ class DuplicateFinder:
                 print("Deletion cancelled.")
 
         return self.duplicates
+
+    def _clear_results(self) -> None:
+        # Clear all previous results
+        self.files_by_size.clear()
+        self.files_by_hash.clear()
+        self.duplicates.clear()
 
     @staticmethod
     def _is_excluded(path: Path, patterns: list[str] | None) -> bool:
