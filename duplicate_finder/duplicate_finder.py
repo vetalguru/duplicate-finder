@@ -68,9 +68,14 @@ class DuplicateFinder:
         self.dry_run = dry_run
         self.interactive = interactive
 
+        # Stage 1: Scan the folder and find duplicates
         print(f"Scanning folder: {self.folder_path}")
         self._group_by_size()
+
+        # Stage 2: Hash files that have the same size
         self._group_by_hash(max_workers=self.threads)
+
+        # Stage 3:Sort duplicates and print them
         self._find_duplicates(
             sort_by_group=self.sort_by_group,
             sort_by_size=self.sort_by_size)
@@ -82,6 +87,7 @@ class DuplicateFinder:
         if self.output_report_path:
             self._save_to_file(self.output_report_path)
 
+        # Stage 4: Handle deletion if requested
         # Handle interactive or automatic deletion
         if self.interactive:
             self._interactive_deletion(report_path=self.delete_report_path)
