@@ -50,10 +50,14 @@ class DuplicateFinder:
 
         # Validate and normalize input parameters
         self.folder_path = self._normalize_folder_path(folder_path)
-        self.exclude_patterns = self._normalize_patterns(exclude_patterns)
-        self.include_patterns = self._normalize_patterns(include_patterns)
-        self.output_report_path = self._normalize_output_report_path(output_report_path)
-        self.delete_report_path = self._normalize_output_report_path(delete_report_path)
+        self.exclude_patterns = (
+            self._normalize_patterns(exclude_patterns))
+        self.include_patterns = (
+            self._normalize_patterns(include_patterns))
+        self.output_report_path = (
+            self._normalize_output_report_path(output_report_path))
+        self.delete_report_path = (
+            self._normalize_output_report_path(delete_report_path))
         self.min_size = self._normalize_size(size=min_size)
         self.max_size = self._normalize_size(size=max_size)
         self.threads = self._normalize_threads(threads=threads)
