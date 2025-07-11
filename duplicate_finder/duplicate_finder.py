@@ -15,9 +15,6 @@ class DuplicateFinder:
         self.folder_path = Path
         self.exclude_patterns = None
         self.include_patterns = None
-        self.files_by_size: dict[int, list[Path]] = {}
-        self.files_by_hash: dict[str, list[Path]] = {}
-        self.duplicates: list[list[Path]] = []
         self.min_size = None
         self.max_size = None
         self.sort_by_group = False
@@ -28,6 +25,10 @@ class DuplicateFinder:
         self.interactive = False
         self.delete_report_path = None
         self.threads = None
+        # Internal state for storing results
+        self.files_by_size: dict[int, list[Path]] = {}
+        self.files_by_hash: dict[str, list[Path]] = {}
+        self.duplicates: list[list[Path]] = []
 
     def run(
         self,
