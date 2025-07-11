@@ -83,7 +83,13 @@ class DuplicateFinder:
             return self.duplicates
 
         # Stage 2: Hash files that have the same size
-        self._group_by_hash(max_workers=self.threads)
+        self.files_by_hash = (
+            self._group_files_by_hash(
+                files_by_size=self.files_by_size,
+                max_workers=self.threads))
+        if not self.files_by_hash:
+            print("No potential duplicates found after hashing.")
+            return self.duplicates
 
         # Stage 3:Sort duplicates and print them
         self._find_duplicates(
@@ -258,13 +264,20 @@ class DuplicateFinder:
         print("\nScanning finished")
         return files_by_size
 
-    def _group_by_hash(self, max_workers: int = 8) -> None:
+    @staticmethod
+    def _group_files_by_hash(
+            files_by_size: dict[int, list[Path]],
+            max_workers: int = 8) -> dict[str, list[Path]]:
+        if not files_by_size:
+            print("No files to hash, skipping hashing step.")
+            return {}
+
         # Calculate hash for files that have the same size
         print("Hashing potential duplicates...")
 
         potential_duplicates = {
             size: files for size, files
-            in self.files_by_size.items() if len(files) > 1
+            in files_by_size.items() if len(files) > 1
         }
         files_to_hash = [
             path for files in potential_duplicates.values() for path in files
@@ -292,7 +305,7 @@ class DuplicateFinder:
                     print(f"\nERROR: Failed to hash"
                           f" {future_to_path[future]}: {e}")
         print()
-        self.files_by_hash = files_by_hash
+        return files_by_hash
 
     def _find_duplicates(
         self, sort_by_group: bool = False, sort_by_size: bool = False
