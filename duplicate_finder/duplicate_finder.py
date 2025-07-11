@@ -3,6 +3,7 @@
 # See LICENSE file in the project root for full license text.
 
 import fnmatch
+import os
 from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -11,7 +12,6 @@ from duplicate_finder import utils as utils
 
 class DuplicateFinder:
     def __init__(self):
-        # Initialize target folder and exclusion list
         self.folder_path = Path
         self.exclude_patterns = None
         self.include_patterns = None
@@ -27,7 +27,7 @@ class DuplicateFinder:
         self.dry_run = False
         self.interactive = False
         self.delete_report_path = None
-        self.threads = 8  # Default number of threads for parallel processing
+        self.threads = None
 
     def run(
         self,
@@ -43,42 +43,46 @@ class DuplicateFinder:
         dry_run: bool = False,
         interactive: bool = False,
         delete_report_path: Path | None = None,
-        threads: int = 8,
+        threads: int = None,
     ) -> list[list[Path]]:
         # Clear internal state before running
         self._clear_results()
 
-        # Perform the full duplicate detection workflow
-        self.folder_path = folder_path.resolve()
-        self.exclude_patterns = exclude_patterns or []
-        self.include_patterns = include_patterns or []
-        self.min_size = (
-            utils.str_file_size_to_int(min_size)) \
-            if min_size else None
-        self.max_size = (
-            utils.str_file_size_to_int(max_size)) \
-            if max_size else None
+        # Validate and normalize input parameters
+        self.folder_path = self._normalize_folder_path(folder_path)
+        self.exclude_patterns = self._normalize_patterns(exclude_patterns)
+        self.include_patterns = self._normalize_patterns(include_patterns)
+        self.output_report_path = self._normalize_output_report_path(output_report_path)
+        self.delete_report_path = self._normalize_output_report_path(delete_report_path)
+        self.min_size = self._normalize_size(size=min_size)
+        self.max_size = self._normalize_size(size=max_size)
+        self.threads = self._normalize_threads(threads=threads)
+        self.sort_by_group = sort_by_group
+        self.sort_by_size = sort_by_size
+        self.delete = delete
+        self.dry_run = dry_run
+        self.interactive = interactive
 
         print(f"Scanning folder: {self.folder_path}")
         self._group_by_size()
-        self._group_by_hash(max_workers=threads)
+        self._group_by_hash(max_workers=self.threads)
         self._find_duplicates(
-            sort_by_group=sort_by_group,
-            sort_by_size=sort_by_size)
+            sort_by_group=self.sort_by_group,
+            sort_by_size=self.sort_by_size)
         self._print_duplicates()
 
         if not self.duplicates:
             return self.duplicates
 
-        if output_report_path:
-            self._save_to_file(output_report_path)
+        if self.output_report_path:
+            self._save_to_file(self.output_report_path)
 
         # Handle interactive or automatic deletion
-        if interactive:
-            self._interactive_deletion(report_path=delete_report_path)
-        elif delete:
+        if self.interactive:
+            self._interactive_deletion(report_path=self.delete_report_path)
+        elif self.delete:
             confirm = "y"
-            if not dry_run:
+            if not self.dry_run:
                 confirm = (
                     input(
                         "\nAre you sure you want to"
@@ -89,8 +93,8 @@ class DuplicateFinder:
                 )
             if confirm == "y":
                 self._delete_duplicates(
-                    dry_run=dry_run,
-                    report_path=delete_report_path)
+                    dry_run=self.dry_run,
+                    report_path=self.delete_report_path)
             else:
                 print("Deletion cancelled.")
 
@@ -101,6 +105,78 @@ class DuplicateFinder:
         self.files_by_size.clear()
         self.files_by_hash.clear()
         self.duplicates.clear()
+
+    @staticmethod
+    def _normalize_folder_path(folder_path: Path):
+        if not isinstance(folder_path, Path):
+            if isinstance(folder_path, str):
+                folder_path = Path(folder_path)
+            else:
+                raise TypeError(
+                    "folder_path must be a Path object, "
+                    f"got {type(folder_path).__name__} instead."
+                )
+        folder_path = folder_path.resolve()
+        if not folder_path.is_dir():
+            raise ValueError(
+                f"Provided path '{folder_path}' is not a directory."
+            )
+        return folder_path
+
+    @staticmethod
+    def _normalize_output_report_path(
+        output_report_path: Path | None
+    ) -> Path | None:
+        # Normalize output report path to a Path object
+        if output_report_path is None:
+            return None
+        if not isinstance(output_report_path, Path):
+            if isinstance(output_report_path, str):
+                output_report_path = Path(output_report_path)
+            else:
+                raise TypeError(
+                    "output_report_path must be a Path object, "
+                    f"got {type(output_report_path).__name__} instead."
+                )
+        return output_report_path.resolve()
+
+    @staticmethod
+    def _normalize_patterns(
+        patterns: list[str] | None
+    ) -> list[str] | None:
+        # Normalize patterns list to ensure they are strings
+        if patterns is None:
+            return None
+        if not isinstance(patterns, list):
+            raise TypeError(
+                "Patterns must be a list of strings, "
+                f"got {type(patterns).__name__} instead."
+            )
+        return [pattern.strip() for pattern in patterns if pattern.strip()]
+
+    @staticmethod
+    def _normalize_size(size: str | None) -> int | None:
+        # Normalize size string to an integer in bytes
+        if size is None:
+            return None
+        try:
+            return utils.str_file_size_to_int(size)
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid size format '{size}': {e}"
+            ) from e
+
+    @staticmethod
+    def _normalize_threads(threads: int | None) -> int:
+        # Normalize threads count to a reasonable value
+        if threads is None or threads <= 0:
+            return min(32, os.cpu_count() or 8)
+        if threads > 32:
+            print(
+                f"WARNING: Using {threads} threads, "
+                "which is more than the recommended maximum of 32."
+            )
+        return threads
 
     @staticmethod
     def _is_excluded(path: Path, patterns: list[str] | None) -> bool:

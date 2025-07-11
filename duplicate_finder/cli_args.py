@@ -3,7 +3,6 @@
 # See LICENSE file in the project root for full license text.
 
 import argparse
-import os
 
 
 class ArgumentParserAdapter:
@@ -99,13 +98,11 @@ class ArgumentParserAdapter:
                  " to delete group by group",
         )
 
-        # Use CPU cores efficiently
-        max_workers = min(32, os.cpu_count() or 8)
         self.parser.add_argument(
             "--threads",
             "-t",
             type=int,
-            default=max_workers,
+            default=None,
             help="Optional: Number of threads."
                  " Dynamically adjusted by default",
         )
