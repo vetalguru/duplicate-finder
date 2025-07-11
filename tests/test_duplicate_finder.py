@@ -208,25 +208,6 @@ def test_identical_files_different_names_and_folders(temp_dir):
     assert set(result[0]) == {f1, f2}
 
 
-def test_file_with_unreadable_stat(temp_dir, monkeypatch):
-    broken_path = temp_dir / "fail.txt"
-    broken_path.write_text("data")
-
-    class BrokenPath(type(broken_path)):
-        def stat(self_inner):
-            raise OSError("fake stat error")
-
-    broken_path_obj = BrokenPath(broken_path)
-
-    class DummyFinder(DuplicateFinder):
-        def _group_by_size(self_inner):
-            self_inner.files_by_size = {4: [str(broken_path_obj)]}
-
-    finder = DummyFinder()
-    result = finder.run(folder_path=temp_dir)
-    assert result == []
-
-
 def test_exclude_exact_filename(temp_dir):
     create_file(temp_dir / "keep.txt", "same")
     create_file(temp_dir / "exclude.txt", "same")

@@ -70,7 +70,17 @@ class DuplicateFinder:
 
         # Stage 1: Scan the folder and find duplicates
         print(f"Scanning folder: {self.folder_path}")
-        self._group_by_size()
+        self.files_by_size = (
+            self._group_files_by_size(
+                folder_path=self.folder_path,
+                include_patterns=self.include_patterns,
+                exclude_patterns=self.exclude_patterns,
+                min_size=self.min_size,
+                max_size=self.max_size
+            ))
+        if not self.files_by_size:
+            print("No files found or all files are excluded.")
+            return self.duplicates
 
         # Stage 2: Hash files that have the same size
         self._group_by_hash(max_workers=self.threads)
@@ -190,57 +200,53 @@ class DuplicateFinder:
         return threads
 
     @staticmethod
-    def _is_excluded(path: Path, patterns: list[str] | None) -> bool:
-        if not patterns:
-            # No exclusions mean everything is included
-            return False
-        # Check if a file path matches any exclusion pattern
-        norm_path = path.as_posix()
-        return any(fnmatch.fnmatch(norm_path, pattern) for pattern in patterns)
-
-    @staticmethod
-    def _is_included(path: Path, patterns: list[str] | None) -> bool:
-        if not patterns:
-            # No inclusions mean everything is included
-            return True
-
-        norm_path = path.as_posix()
-        return any(fnmatch.fnmatch(norm_path, pattern) for pattern in patterns)
-
-    def _group_by_size(self) -> None:
+    def _group_files_by_size(
+            folder_path: Path | None = None,
+            include_patterns: list[str] | None = None,
+            exclude_patterns: list[str] | None = None,
+            min_size: int | None = None,
+            max_size: int | None = None,
+    ) -> dict[int, list[Path]]:
         # Group all files by their size
-        if not self.folder_path.is_dir():
+        if not folder_path.is_dir():
             print(
-                f"ERROR: Path '{self.folder_path}'"
+                f"ERROR: Path '{folder_path}'"
                 f" is not a folder or doesn't exist"
             )
-            return
+            return {}
 
         print("Scanning files and grouping by size...")
         files_by_size = defaultdict(list)
 
         files = [
-            p for p in self.folder_path.rglob("*")
+            p for p in folder_path.rglob("*")
             if p.is_file() and not p.is_symlink()
         ]
         total = len(files)
 
         for i, path in enumerate(files, 1):
-            if self._is_excluded(path, self.exclude_patterns):
-                continue
 
-            if not self._is_included(path, self.include_patterns):
-                continue
+            if include_patterns:
+                # If include patterns are specified, check if the file matches
+                # at least one of them
+                if not any(fnmatch.fnmatch(path.as_posix(), pattern)
+                           for pattern in include_patterns):
+                    continue
 
+            if exclude_patterns:
+                # If exclude patterns are specified, skip the file if it matches
+                if any(fnmatch.fnmatch(path.as_posix(), pattern)
+                       for pattern in exclude_patterns):
+                    continue
             try:
                 size = path.stat().st_size
 
                 # Skip small files
-                if self.min_size and size < self.min_size:
+                if min_size and size < min_size:
                     continue
 
                 # Skip big files
-                if self.max_size and size > self.max_size:
+                if max_size and size > max_size:
                     continue
 
                 files_by_size[size].append(str(path))
@@ -250,7 +256,7 @@ class DuplicateFinder:
             print(f"\r[Size Scan] Progress [{i}/{total}]", end="")
 
         print("\nScanning finished")
-        self.files_by_size = files_by_size
+        return files_by_size
 
     def _group_by_hash(self, max_workers: int = 8) -> None:
         # Calculate hash for files that have the same size
