@@ -327,11 +327,13 @@ class DuplicateFinder:
             print("No duplicates found.")
             return
 
+        total_groups = len(self.duplicates)
+
         print("\nDuplicate files:")
         for idx, group in enumerate(self.duplicates, start=1):
             size = Path(group[0]).stat().st_size
             print(
-                f"\nGroup {idx} ({len(group)}"
+                f"\nGroup {idx}/{total_groups} ({len(group)}"
                 f" file(s), size: {utils.humanize_size(size)}):"
             )
             for path in group:
@@ -339,13 +341,14 @@ class DuplicateFinder:
 
     def _save_to_file(self, output_report_path: Path) -> None:
         # Save duplicate report to a specified file
+        total_groups = len(self.duplicates)
         try:
             with open(output_report_path, "w", encoding="utf-8") as f:
                 f.write("Duplicate files:\n")
                 for idx, group in enumerate(self.duplicates, 1):
                     size = Path(group[0]).stat().st_size
                     f.write(
-                        f"\nGroup {idx} ({len(group)}"
+                        f"\nGroup {idx}/{total_groups} ({len(group)}"
                         f" file(s), size: {size} bytes):\n"
                     )
                     for path in group:
@@ -412,9 +415,10 @@ class DuplicateFinder:
         deleted_count = 0
         total_deleted_size = 0
         report_lines = []
+        total_groups = len(self.duplicates)
 
         for idx, group in enumerate(self.duplicates, start=1):
-            print(f"\nGroup {idx} ({len(group)} files):")
+            print(f"\nGroup {idx}/{total_groups} ({len(group)} files):")
             for i, path in enumerate(group):
                 print(f"  [{i + 1}] {path}")
 
