@@ -27,7 +27,7 @@ class DuplicateFinder:
         self.threads = None
         # Internal state for storing results
         self.file_groups_by_size: dict[int, list[Path]] = {}
-        self.files_by_hash: dict[str, list[Path]] = {}
+        self.file_groups_by_hash: dict[str, list[Path]] = {}
         self.duplicates: list[list[Path]] = []
 
     def run(
@@ -83,11 +83,11 @@ class DuplicateFinder:
             return self.duplicates
 
         # Stage 2: Hash files that have the same size
-        self.files_by_hash = (
+        self.file_groups_by_hash = (
             self._group_files_by_hash(
                 files_by_size=self.file_groups_by_size,
                 max_workers=self.threads))
-        if not self.files_by_hash:
+        if not self.file_groups_by_hash:
             print("No potential duplicates found after hashing.")
             return self.duplicates
 
@@ -130,7 +130,7 @@ class DuplicateFinder:
     def _clear_results(self) -> None:
         # Clear all previous results
         self.file_groups_by_size.clear()
-        self.files_by_hash.clear()
+        self.file_groups_by_hash.clear()
         self.duplicates.clear()
 
     @staticmethod
@@ -313,7 +313,7 @@ class DuplicateFinder:
         # Group files by hash; optionally sort the result
         groups = [
             sorted(group) for group
-            in self.files_by_hash.values() if len(group) > 1
+            in self.file_groups_by_hash.values() if len(group) > 1
         ]
         if sort_by_group:
             groups.sort(key=len, reverse=True)
