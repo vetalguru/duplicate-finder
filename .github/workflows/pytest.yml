@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -21,23 +22,35 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install .[dev]  # если dev-зависимости указаны в pyproject.toml или setup.cfg
+        pip install .[dev]
         pip install pytest pytest-cov flake8 build
 
     - name: Run flake8 linter
-      run: |
-        flake8 duplicate_finder tests
+      run: flake8 duplicate_finder tests
 
     - name: Run tests with coverage
       run: |
-        pytest --cov=duplicate_finder --cov-report=term --cov-report=html
+        pytest --cov=duplicate_finder \
+               --cov-report=term \
+               --cov-report=html \
+               --cov-report=xml
 
-    - name: Upload coverage to GitHub (artifact)
+    - name: Upload coverage.xml report
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-report
+        name: coverage-report-xml
         path: coverage.xml
+        if-no-files-found: warn
+
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report-html
+        path: htmlcov/
+        if-no-files-found: warn
+        include-hidden-files: false
+        compression-level: 6
+        overwrite: false
 
     - name: Build distribution package
-      run: |
-        python -m build
+      run: python -m build
