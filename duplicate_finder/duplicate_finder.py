@@ -26,7 +26,7 @@ class DuplicateFinder:
         self.delete_report_path = None
         self.threads = None
         # Internal state for storing results
-        self.files_by_size: dict[int, list[Path]] = {}
+        self.file_groups_by_size: dict[int, list[Path]] = {}
         self.files_by_hash: dict[str, list[Path]] = {}
         self.duplicates: list[list[Path]] = []
 
@@ -70,7 +70,7 @@ class DuplicateFinder:
 
         # Stage 1: Scan the folder and find duplicates
         print(f"Scanning folder: {self.folder_path}")
-        self.files_by_size = (
+        self.file_groups_by_size = (
             self._group_files_by_size(
                 folder_path=self.folder_path,
                 include_patterns=self.include_patterns,
@@ -78,14 +78,14 @@ class DuplicateFinder:
                 min_size=self.min_size,
                 max_size=self.max_size
             ))
-        if not self.files_by_size:
+        if not self.file_groups_by_size:
             print("No files found or all files are excluded.")
             return self.duplicates
 
         # Stage 2: Hash files that have the same size
         self.files_by_hash = (
             self._group_files_by_hash(
-                files_by_size=self.files_by_size,
+                files_by_size=self.file_groups_by_size,
                 max_workers=self.threads))
         if not self.files_by_hash:
             print("No potential duplicates found after hashing.")
@@ -129,7 +129,7 @@ class DuplicateFinder:
 
     def _clear_results(self) -> None:
         # Clear all previous results
-        self.files_by_size.clear()
+        self.file_groups_by_size.clear()
         self.files_by_hash.clear()
         self.duplicates.clear()
 
