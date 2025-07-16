@@ -410,6 +410,7 @@ class DuplicateFinder:
         # Prompt user to choose which file to keep in each group
         print("\nInteractive duplicate cleanup started.")
         deleted_count = 0
+        total_deleted_size = 0
         report_lines = []
 
         for idx, group in enumerate(self.duplicates, start=1):
@@ -443,15 +444,23 @@ class DuplicateFinder:
 
             for path in to_delete:
                 try:
+                    try:
+                        file_size = Path(path).stat().st_size
+                    except Exception:
+                        file_size = 0
+
                     Path(path).unlink()
                     print(f"Deleted: {path}")
                     report_lines.append(f"Deleted: {path}")
                     deleted_count += 1
+                    total_deleted_size += file_size
                 except Exception as e:
                     print(f"ERROR: Could not delete {path}: {e}")
                     report_lines.append(f"FAILED: {path} ({e})")
 
         print(f"\nTotal deleted interactively: {deleted_count}")
+        print(f"\nTotal deleted size: "
+              f"{utils.humanize_size(total_deleted_size)}")
 
         if report_path:
             try:
