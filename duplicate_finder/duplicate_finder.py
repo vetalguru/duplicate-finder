@@ -35,8 +35,8 @@ class DuplicateFinder:
         folder_path_to_scan: Path,
         exclude_patterns=None,
         include_patterns=None,
-        min_size: str = None,
-        max_size: str = None,
+        min_file_size: str = None,
+        max_file_size: str = None,
         sort_by_group: bool = False,
         sort_by_size: bool = False,
         output_report_path: Path | None = None,
@@ -59,8 +59,8 @@ class DuplicateFinder:
             self._normalize_output_report_path(output_report_path))
         self.delete_report_path = (
             self._normalize_output_report_path(delete_report_path))
-        self.min_size = self._normalize_size(size=min_size)
-        self.max_size = self._normalize_size(size=max_size)
+        self.min_size = self._normalize_size(size=min_file_size)
+        self.max_size = self._normalize_size(size=max_file_size)
         self.threads = self._normalize_threads(threads=threads)
         self.sort_by_group = sort_by_group
         self.sort_by_size = sort_by_size

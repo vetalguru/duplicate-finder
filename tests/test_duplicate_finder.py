@@ -288,7 +288,7 @@ def test_min_size_filter(tmp_path):
     finder = DuplicateFinder()
     finder.run(
         folder_path_to_scan=tmp_path,
-        min_size="5")
+        min_file_size="5")
     assert [group for group in finder.duplicates if small.name in group] == []
 
 
@@ -302,7 +302,7 @@ def test_filter_by_max_size(tmp_path):
     finder = DuplicateFinder()
     duplicates = finder.run(
         folder_path_to_scan=tmp_path,
-        min_size="0B",
-        max_size="1M",
+        min_file_size="0B",
+        max_file_size="1M",
         dry_run=True)
     assert duplicates == []
