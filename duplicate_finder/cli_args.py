@@ -38,13 +38,11 @@ class ArgumentParserAdapter:
 
         self.parser.add_argument(
             "--output",
-            "-o",
             type=str,
             help="Optional: path to output file (e.g., duplicates.txt)",
         )
         self.parser.add_argument(
             "--exclude",
-            "-e",
             type=str,
             nargs="*",
             default=[],
@@ -92,7 +90,6 @@ class ArgumentParserAdapter:
         )
         self.parser.add_argument(
             "--interactive",
-            "-i",
             action="store_true",
             help="Optional: interactive mode, select files"
                  " to delete group by group",
@@ -100,7 +97,6 @@ class ArgumentParserAdapter:
 
         self.parser.add_argument(
             "--threads",
-            "-t",
             type=int,
             default=None,
             help="Optional: Number of threads."

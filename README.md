@@ -56,6 +56,12 @@ python -m duplicate_finder "C:/Users/John/Documents" --interactive
 python -m duplicate_finder "C:/Users/John/Documents" --delete
 ```
 
+### Save deleted file paths to a report:
+
+```bash
+python -m duplicate_finder "C:/Users/John/Documents" --delete --delete-report deleted.txt
+```
+
 ### Dry-run mode (preview deletions):
 
 ```bash
@@ -68,26 +74,41 @@ python -m duplicate_finder "C:/Users/John/Documents" --delete --dry-run
 python -m duplicate_finder "C:/Users/John/Documents" --output duplicates.txt
 ```
 
+### Include only specific file types:
+
+```bash
+python -m duplicate_finder "C:/Users/John/Documents" --include "*.txt" "*.md"
+```
 ### Exclude specific files or folders:
 
 ```bash
 python -m duplicate_finder "C:/Users/John/Documents" --exclude "*.log" "temp/*"
 ```
 
+### Skip small files (e.g., less than 100KB) and large ones (e.g., more than 100MB):
+
+```bash
+python -m duplicate_finder "C:/Users/John/Documents" --min-size 100K --max-size 100M
+```
+
+
 ## ⚙️ CLI Options
 
-| Option | Description |
-|--------|-------------|
-| `folder_path` | **(Required)** Path to the folder to scan |
-| `--sort-by-group-size` | Sort duplicate groups by number of files |
-| `--sort-by-file-size` | Sort duplicate groups by file size |
-| `--output, -o` | Save duplicate list to a file |
-| `--exclude, -e` | Exclude files/folders using glob patterns |
-| `--delete` | Delete duplicate files (keeps first file in each group) |
-| `--delete-report` | Save deleted file paths to a report |
-| `--dry-run` | Show files that would be deleted without deleting them |
-| `--interactive, -i` | Interactive mode: manually select files to delete |
-| `--threads` | Number of threads for hashing (default: 8) |
+| Option                 | Description                                             |
+|------------------------|---------------------------------------------------------|
+| `folder_path`          | **(Required)** Path to the folder to scan               |
+| `--sort-by-group-size` | Sort duplicate groups by number of files                |
+| `--sort-by-file-size`  | Sort duplicate groups by file size                      |
+| `--output`             | Save duplicate list to a file                           |
+| `--include`            | Include files/folders using glob patterns               |
+| `--exclude`            | Exclude files/folders using glob patterns               |
+| `--delete`             | Delete duplicate files (keeps first file in each group) |
+| `--delete-report`      | Save deleted file paths to a report                     |
+| `--dry-run`            | Show files that would be deleted without deleting them  |
+| `--interactive`        | Interactive mode: manually select files to delete       |
+| `--threads`            | Number of threads for hashing (calculated by default)   |
+| `--max_size`           | Maximum file size to analyze                            |
+| `--min_size`           | Minimal file size to analyze                            |
 
 ## 🛠 Development
 
