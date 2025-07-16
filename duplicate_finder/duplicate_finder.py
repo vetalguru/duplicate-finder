@@ -32,7 +32,7 @@ class DuplicateFinder:
 
     def run(
         self,
-        folder_path: Path,
+        folder_path_to_scan: Path,
         exclude_patterns=None,
         include_patterns=None,
         min_size: str = None,
@@ -50,7 +50,7 @@ class DuplicateFinder:
         self._clear_results()
 
         # Validate and normalize input parameters
-        self.folder_path = self._normalize_folder_path(folder_path)
+        self.folder_path = self._normalize_folder_path(folder_path_to_scan)
         self.exclude_patterns = (
             self._normalize_patterns(exclude_patterns))
         self.include_patterns = (

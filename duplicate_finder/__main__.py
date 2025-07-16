@@ -13,7 +13,7 @@ def main() -> None:
 
     finder = DuplicateFinder()
     finder.run(
-        folder_path=Path(args.folder_path),
+        folder_path_to_scan=Path(args.folder_path),
         exclude_patterns=args.exclude,
         include_patterns=args.include,
         min_size=args.min_size,
