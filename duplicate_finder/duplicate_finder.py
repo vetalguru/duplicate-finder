@@ -4,6 +4,7 @@
 
 import fnmatch
 import os
+import re
 from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -187,6 +188,16 @@ class DuplicateFinder:
         # Normalize size string to an integer in bytes
         if size is None:
             return None
+
+        # Check if the size string has a valid number format
+        match = re.match(r"^\s*(\d*\.?\d*)\s*([KMGT]?I?B)?\s*$", size, re.IGNORECASE)
+        if not match:
+           raise ValueError(f"Invalid size format '{size}': must contain a valid number")
+
+        number, unit = match.groups()
+        if not number or number == ".":
+            raise ValueError(f"Invalid number format in size '{size}'")
+
         try:
             return utils.str_file_size_to_int(size)
         except ValueError as e:
