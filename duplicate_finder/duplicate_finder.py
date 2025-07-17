@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 from duplicate_finder import utils as utils
 
 
@@ -279,6 +280,7 @@ class DuplicateFinder:
         total = len(files_to_hash)
 
         files_by_hash = defaultdict(list)
+        lock = Lock()
 
         def hash_worker(path):
             return path, utils.calc_file_sha256(path)
@@ -294,7 +296,8 @@ class DuplicateFinder:
                 try:
                     path, file_hash = future.result()
                     if file_hash:
-                        files_by_hash[file_hash].append(path)
+                        with lock:
+                            files_by_hash[file_hash].append(path)
                 except Exception as e:
                     print(f"\nERROR: Failed to hash"
                           f" {future_to_path[future]}: {e}")
