@@ -221,47 +221,41 @@ class DuplicateFinder:
             )
             return {}
 
+        print("Counting files...")
+        total = sum(1 for p in folder_path.rglob("*") if p.is_file() and not p.is_symlink())
+        print(f"Found {total} files.")
+
         print("Scanning files and grouping by size...")
         files_by_size = defaultdict(list)
+        processed = 0
 
-        files = [
-            p for p in folder_path.rglob("*")
-            if p.is_file() and not p.is_symlink()
-        ]
-        total = len(files)
-
-        for i, path in enumerate(files, 1):
-
-            if include_patterns:
-                # If include patterns are specified, check if the file matches
-                # at least one of them
-                if not any(fnmatch.fnmatch(path.as_posix(), pattern)
-                           for pattern in include_patterns):
-                    continue
-
-            if exclude_patterns:
-                # If exclude patterns are specified, skip the file if it matches
-                if any(fnmatch.fnmatch(path.as_posix(), pattern)
-                       for pattern in exclude_patterns):
-                    continue
+        for p in folder_path.rglob("*"):
             try:
-                size = path.stat().st_size
+                if p.is_file() and not p.is_symlink():
+                    if include_patterns:
+                        if not any(fnmatch.fnmatch(p.as_posix(), pattern)
+                                for pattern in include_patterns):
+                            continue
 
-                # Skip small files
-                if min_size and size < min_size:
-                    continue
+                    if exclude_patterns:
+                        if any(fnmatch.fnmatch(p.as_posix(), pattern)
+                            for pattern in exclude_patterns):
+                            continue
 
-                # Skip big files
-                if max_size and size > max_size:
-                    continue
+                    size = p.stat().st_size
 
-                files_by_size[size].append(str(path))
-            except OSError:
-                print(f"\nATTENTION: Unable to access file: {path}")
+                    if min_size and size < min_size:
+                        continue
+                    if max_size and size > max_size:
+                        continue
 
-            print(f"\r[Size Scan] Progress [{i}/{total}]", end="")
+                    files_by_size[size].append(p)
+                    processed += 1
+                    print(f"\r[Size Scan] Progress [{processed}/{total}]", end="")
+            except (OSError, PermissionError) as e:
+                print(f"\nATTENTION: Skipping {p} due to access error: {e}")
 
-        print("\nScanning finished")
+        print(f"\nScanning finished. Processed {processed} of {total} files.")
         return files_by_size
 
     @staticmethod
