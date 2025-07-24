@@ -119,6 +119,13 @@ class ArgumentParserAdapter:
                  " duplicate detection (e.g. 100K, 5M, 1G)"
         )
 
+        self.parser.add_argument(
+            "--verify-content",
+            action="store_true",
+            help="Optional: Compare files byte by byte to verify"
+                 " they are identical (default is to compare file sizes only)"
+        )
+
     def parse(self) -> argparse.Namespace:
         # Parse and return the command-line arguments
         return self.parser.parse_args()

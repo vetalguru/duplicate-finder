@@ -81,3 +81,28 @@ def int_file_size_to_str(size_bytes: int) -> str:
             )
         size_bytes /= 1024
     return f"{size_bytes:.1f} PB"
+
+
+def files_are_identical(file1: Path, file2: Path, chunk_size: int = 65536) -> bool:
+    """
+    Check if two files are identical by comparing their SHA256 hashes.
+
+    Args:
+        file1 (Path): First file path.
+        file2 (Path): Second file path.
+        chunk_size (int): Size of chunks to read from files for comparison.
+
+    Returns:
+        bool: True if files are identical, False otherwise.
+    """
+    if file1.stat().st_size != file2.stat().st_size:
+        return False
+
+    with open(file1, "rb") as f1, open(file2, "rb") as f2:
+        while True:
+            b1 = f1.read(chunk_size)
+            b2 = f2.read(chunk_size)
+            if b1 != b2:
+                return False
+            if not b1:  # EOF
+                return True

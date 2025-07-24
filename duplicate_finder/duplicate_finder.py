@@ -27,6 +27,7 @@ class DuplicateFinder:
         self.interactive = False
         self.delete_report_path = None
         self.threads = None
+        self.verify_content = True
         # Internal state for storing results
         self.file_groups_by_size: dict[int, list[Path]] = {}
         self.file_groups_by_hash: dict[str, list[Path]] = {}
@@ -47,6 +48,7 @@ class DuplicateFinder:
         interactive: bool = False,
         delete_report_path: Path | None = None,
         threads: int = None,
+        verify_content: bool = True,
     ) -> list[list[Path]]:
         # Clear internal state before running
         self._clear_results()
@@ -67,6 +69,7 @@ class DuplicateFinder:
         self.delete = delete
         self.dry_run = dry_run
         self.interactive = interactive
+        self.verify_content = verify_content
 
         # Stage 1: Scan the folder and find duplicates
         print(f"Scanning folder: {self.folder_path}")
@@ -89,15 +92,24 @@ class DuplicateFinder:
             print("No potential duplicates found after hashing.")
             return self.duplicates
 
-        # Stage 3:Sort duplicates and print them
+        # Stage 3: Sort duplicates and print them
         self._find_duplicates(
             sort_by_group=self.sort_by_group, sort_by_size=self.sort_by_size
         )
-        self._print_duplicates()
+
+        # Stage 3.1: Verify duplicates by comparing file contents
+        if self.verify_content:
+            print("\nVerifying duplicates by file contents...")
+            self.file_groups_by_hash = (
+                self._verify_content(self.file_groups_by_hash))
 
         if not self.duplicates:
             return self.duplicates
 
+        # Print found duplicates to console
+        self._print_duplicates()
+
+        # Save duplicates to output report if requested
         if self.output_report_path:
             self._save_to_file(self.output_report_path)
 
@@ -484,3 +496,43 @@ class DuplicateFinder:
                 print(f"Report saved to: {report_path}")
             except Exception as e:
                 print(f"ERROR: Failed to save report: {e}")
+
+    @staticmethod
+    def _verify_content(
+            file_groups_by_hash: dict[str, list[Path]]
+    ) -> dict[str, list[Path]]:
+        verified = defaultdict(list)
+
+        total_comparisons = sum(
+            len(group) * (len(group) - 1) // 2
+            for group in file_groups_by_hash.values()
+            if len(group) > 1
+        )
+        completed = 0
+
+        print("Verifying content of potential duplicates...")
+
+        for file_hash, group in file_groups_by_hash.items():
+            if len(group) < 2:
+                continue
+            while group:
+                ref = group.pop(0)
+                verified[file_hash].append(ref)
+                remaining = []
+                for other in group:
+                    try:
+                        if utils.files_are_identical(ref, other):
+                            verified[file_hash].append(other)
+                        else:
+                            remaining.append(other)
+                    except Exception as e:
+                        print(f"\nERROR: Failed to compare {ref}"
+                              f" and {other}: {e}")
+                        remaining.append(other)
+                    completed += 1
+                    print(f"\r[Verification]"
+                          f" Progress [{completed}/{total_comparisons}]",
+                          end="")
+                group = remaining
+        print()
+        return verified
