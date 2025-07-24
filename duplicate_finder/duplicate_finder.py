@@ -29,8 +29,7 @@ class DuplicateFinder:
         self.threads = None
         self.verify_content = True
         # Internal state for storing results
-        self.file_groups_by_size: dict[int, list[Path]] = {}
-        self.file_groups_by_hash: dict[str, list[Path]] = {}
+        self.file_groups: dict[int, list[Path]] = {}
         self.duplicates: list[list[Path]] = []
 
     def run(
@@ -73,41 +72,43 @@ class DuplicateFinder:
 
         # Stage 1: Scan the folder and find duplicates
         print(f"Scanning folder: {self.folder_path}")
-        self.file_groups_by_size = self._group_files_by_size(
+        self.file_groups = self._group_files_by_size(
             folder_path=self.folder_path,
             include_patterns=self.include_patterns,
             exclude_patterns=self.exclude_patterns,
             min_size=self.min_size,
             max_size=self.max_size,
         )
-        if not self.file_groups_by_size:
+        if not self.file_groups:
             print("No files found or all files are excluded.")
             return self.duplicates
 
         # Stage 2: Hash files that have the same size
-        self.file_groups_by_hash = self._group_files_by_hash(
-            files_by_size=self.file_groups_by_size, max_workers=self.threads
+        self.file_groups = self._group_files_by_hash(
+            files_by_size=self.file_groups, max_workers=self.threads
         )
-        if not self.file_groups_by_hash:
+        if not self.file_groups:
             print("No potential duplicates found after hashing.")
             return self.duplicates
 
         # Stage 3: Sort duplicates and print them
-        self._find_duplicates(
+        self.duplicates = self._group_duplicates(self.file_groups,
             sort_by_group=self.sort_by_group, sort_by_size=self.sort_by_size
         )
+        # Clear file groups to free memory
+        self.file_groups.clear()
 
         # Stage 3.1: Verify duplicates by comparing file contents
         if self.verify_content:
             print("\nVerifying duplicates by file contents...")
-            self.file_groups_by_hash = (
-                self._verify_content(self.file_groups_by_hash))
+            self.file_groups = (
+                self._verify_content(self.file_groups))
 
         if not self.duplicates:
             return self.duplicates
 
         # Print found duplicates to console
-        self._print_duplicates()
+        self._print_duplicates(self.duplicates)
 
         # Save duplicates to output report if requested
         if self.output_report_path:
@@ -139,8 +140,7 @@ class DuplicateFinder:
 
     def _clear_results(self) -> None:
         # Clear all previous results
-        self.file_groups_by_size.clear()
-        self.file_groups_by_hash.clear()
+        self.file_groups.clear()
         self.duplicates.clear()
 
     @staticmethod
@@ -250,6 +250,14 @@ class DuplicateFinder:
         for p in folder_path.rglob("*"):
             try:
                 if p.is_file() and not p.is_symlink():
+                    # Check file size
+                    size = p.stat().st_size
+                    if min_size and size < min_size:
+                        continue
+                    if max_size and size > max_size:
+                        continue
+
+                    # Check include patterns
                     if include_patterns:
                         if not any(
                             fnmatch.fnmatch(p.as_posix(), pattern)
@@ -257,19 +265,13 @@ class DuplicateFinder:
                         ):
                             continue
 
+                    # Check exclude patterns from included files
                     if exclude_patterns:
                         if any(
                             fnmatch.fnmatch(p.as_posix(), pattern)
                             for pattern in exclude_patterns
                         ):
                             continue
-
-                    size = p.stat().st_size
-
-                    if min_size and size < min_size:
-                        continue
-                    if max_size and size > max_size:
-                        continue
 
                     files_by_size[size].append(p)
                     processed += 1
@@ -326,31 +328,33 @@ class DuplicateFinder:
         print()
         return files_by_hash
 
-    def _find_duplicates(
-        self, sort_by_group: bool = False, sort_by_size: bool = False
-    ) -> None:
-        # Group files by hash; optionally sort the result
+    @staticmethod
+    def _group_duplicates(files: dict[str, list[Path]],
+                          sort_by_group: bool = False,
+                          sort_by_size: bool = False
+    ) -> list[list[Path]]:
         groups = [
             sorted(group) for group
-            in self.file_groups_by_hash.values()
+            in files.values()
             if len(group) > 1
         ]
         if sort_by_group:
             groups.sort(key=len, reverse=True)
         elif sort_by_size:
             groups.sort(key=lambda g: Path(g[0]).stat().st_size, reverse=True)
-        self.duplicates = groups
+        return groups
 
-    def _print_duplicates(self) -> None:
+    @staticmethod
+    def _print_duplicates(duplicates: list[list[Path]]) -> None:
         # Print found duplicates in grouped format
-        if not self.duplicates:
+        if not duplicates:
             print("No duplicates found.")
             return
 
-        total_groups = len(self.duplicates)
+        total_groups = len(duplicates)
 
         print("\nDuplicate files:")
-        for idx, group in enumerate(self.duplicates, start=1):
+        for idx, group in enumerate(duplicates, start=1):
             size = Path(group[0]).stat().st_size
             print(
                 f"\nGroup {idx}/{total_groups} ({len(group)}"
@@ -390,8 +394,10 @@ class DuplicateFinder:
             for path in group[1:]:  # Keep just a first file in each group
                 try:
                     file_size = Path(path).stat().st_size
-                except Exception:
-                    file_size = 0
+                except Exception as e:
+                    print(f"ERROR: Could not get size for {path}: {e}")
+                    report_lines.append(f"FAILED: {path} ({e})")
+                    continue
 
                 if dry_run:
                     print(f"[would delete] {path}")
@@ -470,8 +476,10 @@ class DuplicateFinder:
                 try:
                     try:
                         file_size = Path(path).stat().st_size
-                    except Exception:
-                        file_size = 0
+                    except Exception as e:
+                        print(f"ERROR: Could not get size for {path}: {e}")
+                        report_lines.append(f"FAILED: {path} ({e})")
+                        continue
 
                     Path(path).unlink()
                     print(f"Deleted: {path}")
@@ -499,20 +507,20 @@ class DuplicateFinder:
 
     @staticmethod
     def _verify_content(
-            file_groups_by_hash: dict[str, list[Path]]
+            file_groups: dict[str, list[Path]]
     ) -> dict[str, list[Path]]:
         verified = defaultdict(list)
 
         total_comparisons = sum(
             len(group) * (len(group) - 1) // 2
-            for group in file_groups_by_hash.values()
+            for group in file_groups.values()
             if len(group) > 1
         )
         completed = 0
 
         print("Verifying content of potential duplicates...")
 
-        for file_hash, group in file_groups_by_hash.items():
+        for file_hash, group in file_groups.items():
             if len(group) < 2:
                 continue
             while group:
