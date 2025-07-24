@@ -3,31 +3,35 @@
 # See LICENSE file in the project root for full license text.
 
 from pathlib import Path
+
 from .cli_args import ArgumentParserAdapter
 from .duplicate_finder import DuplicateFinder
+from .duplicate_finder_config import DuplicateFinderConfig
 
 
 def main() -> None:
     # Parse command-line arguments (folder path, flags, etc.)
     args = ArgumentParserAdapter().parse()
 
-    finder = DuplicateFinder()
-    finder.run(
-        folder_path_to_scan=Path(args.folder_path),
+    config = DuplicateFinderConfig(
+        scan_folder_path=Path(args.folder_path),
         exclude_patterns=args.exclude,
         include_patterns=args.include,
-        min_file_size=args.min_size,
         max_file_size=args.max_size,
-        sort_by_group=args.sort_by_group_size,
-        sort_by_size=args.sort_by_file_size,
-        output_report_path=args.output,
-        delete=args.delete,
-        interactive=args.interactive,
-        dry_run=args.dry_run,
-        delete_report_path=args.delete_report,
-        threads=args.threads,
+        min_file_size=args.min_size,
+        output_file_path=args.output,
+        sort_by_group_size=args.sort_by_group_size,
+        sort_by_file_size=args.sort_by_file_size,
+        threads_count=args.threads,
         verify_content=args.verify_content,
+        delete_duplicates=args.delete,
+        delete_report_file_path=args.delete_report,
+        interactive_mode=args.interactive,
+        dry_run=args.dry_run,
     )
+
+    finder = DuplicateFinder()
+    finder.run(config=config)
 
 
 # Allow running the script directly

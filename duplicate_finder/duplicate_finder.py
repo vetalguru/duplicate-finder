@@ -2,84 +2,41 @@
 # Licensed under the MIT License.
 # See LICENSE file in the project root for full license text.
 
-import fnmatch
-import os
-import re
-import sys
-from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from threading import Lock
-from duplicate_finder import utils as utils
+import fnmatch
+import sys
+
+from duplicate_finder import utils
+from duplicate_finder.duplicate_finder_config import DuplicateFinderConfig
 
 
 class DuplicateFinder:
     def __init__(self):
-        self.folder_path = Path
-        self.exclude_patterns = None
-        self.include_patterns = None
-        self.min_size = None
-        self.max_size = None
-        self.sort_by_group = False
-        self.sort_by_size = False
-        self.output_report_path = None
-        self.delete = False
-        self.dry_run = False
-        self.interactive = False
-        self.delete_report_path = None
-        self.threads = None
-        self.verify_content = True
+        self.cfg = None
         # Internal state for storing results
         self.file_groups: dict[int, list[Path]] = {}
         self.duplicates: list[list[Path]] = []
 
     def run(
         self,
-        folder_path_to_scan: Path,
-        exclude_patterns=None,
-        include_patterns=None,
-        min_file_size: str = None,
-        max_file_size: str = None,
-        sort_by_group: bool = False,
-        sort_by_size: bool = False,
-        output_report_path: Path | None = None,
-        delete: bool = False,
-        dry_run: bool = False,
-        interactive: bool = False,
-        delete_report_path: Path | None = None,
-        threads: int = None,
-        verify_content: bool = True,
+        config: DuplicateFinderConfig
     ) -> list[list[Path]]:
         # Clear internal state before running
         self._clear_results()
 
-        # Validate and normalize input parameters
-        self.folder_path = self._normalize_folder_path(folder_path_to_scan)
-        self.exclude_patterns = self._normalize_patterns(exclude_patterns)
-        self.include_patterns = self._normalize_patterns(include_patterns)
-        self.output_report_path = (
-            self._normalize_output_report_path(output_report_path))
-        self.delete_report_path = (
-            self._normalize_output_report_path(delete_report_path))
-        self.min_size = self._normalize_size(size=min_file_size)
-        self.max_size = self._normalize_size(size=max_file_size)
-        self.threads = self._normalize_threads(threads=threads)
-        self.sort_by_group = sort_by_group
-        self.sort_by_size = sort_by_size
-        self.delete = delete
-        self.dry_run = dry_run
-        self.interactive = interactive
-        self.verify_content = verify_content
+        self.cfg = config
 
         # Stage 1: Scan the folder and find duplicates
-        print(f"Scanning folder: {self.folder_path}")
+        print(f"Scanning folder: {self.cfg.scan_folder_path}")
         self.file_groups = self._get_files_list(
-            folder_path=self.folder_path,
-            include_patterns=self.include_patterns,
-            exclude_patterns=self.exclude_patterns,
-            min_size=self.min_size,
-            max_size=self.max_size,
-        )
+            folder_path = self.cfg.scan_folder_path,
+            include_patterns=self.cfg.include_patterns,
+            exclude_patterns=self.cfg.exclude_patterns,
+            min_size=self.cfg.min_file_size,
+            max_size=self.cfg.max_file_size)
         if not self.file_groups:
             print("No files found or all files are excluded.")
             return self.duplicates
@@ -93,23 +50,24 @@ class DuplicateFinder:
 
         # Stage 2: Hash files that have the same size
         self.file_groups = self._group_files_by_hash(
-            files_by_size=self.file_groups, max_workers=self.threads
-        )
+            files_by_size=self.file_groups,
+            max_workers=self.cfg.threads_count)
         if not self.file_groups:
             print("No potential duplicates found after hashing.")
             return self.duplicates
 
         # Stage 3: Sort duplicates and print them
         # Verify duplicates by comparing file contents
-        if self.verify_content:
+        if self.cfg.verify_content:
             self.file_groups = (
                 self._verify_content(self.file_groups))
 
         # Group files into duplicate groups
         self.duplicates = (
-            self._group_duplicates(self.file_groups,
-                                   sort_by_group=self.sort_by_group,
-                                   sort_by_size=self.sort_by_size))
+            self._group_duplicates(
+                self.file_groups,
+                sort_by_group=self.cfg.sort_by_group_size,
+                sort_by_size=self.cfg.sort_by_file_size))
         # Clear file groups to free memory
         self.file_groups.clear()
 
@@ -120,18 +78,18 @@ class DuplicateFinder:
         self._print_duplicates(self.duplicates)
 
         # Save duplicates to output report if requested
-        if self.output_report_path:
-            self._save_report_to_file(self.duplicates, self.output_report_path)
+        if self.cfg.output_file_path:
+            self._save_report_to_file(self.duplicates, self.cfg.output_file_path)
 
         # Stage 4: Handle deletion if requested
         # Handle interactive or automatic deletion
-        if self.interactive:
+        if self.cfg.interactive_mode:
             self._delete_duplicates_interactive(
                 duplicates=self.duplicates,
-                report_path=self.delete_report_path)
-        elif self.delete:
+                report_path=self.cfg.delete_report_file_path)
+        elif self.cfg.delete_duplicates:
             confirm = "y"
-            if not self.dry_run:
+            if not self.cfg.dry_run:
                 confirm = (
                     input(
                         "\nAre you sure you want to"
@@ -143,8 +101,8 @@ class DuplicateFinder:
             if confirm == "y":
                 self._delete_duplicates(
                     self.duplicates,
-                    dry_run=self.dry_run,
-                    report_path=self.delete_report_path)
+                    dry_run=self.cfg.dry_run,
+                    report_path=self.cfg.delete_report_file_path)
             else:
                 print("Deletion cancelled.")
 
@@ -154,85 +112,6 @@ class DuplicateFinder:
         # Clear all previous results
         self.file_groups.clear()
         self.duplicates.clear()
-
-    @staticmethod
-    def _normalize_folder_path(folder_path: Path):
-        if not isinstance(folder_path, Path):
-            if isinstance(folder_path, str):
-                folder_path = Path(folder_path)
-            else:
-                raise TypeError(
-                    "folder_path must be a Path object, "
-                    f"got {type(folder_path).__name__} instead."
-                )
-        folder_path = folder_path.resolve()
-        if not folder_path.is_dir():
-            raise ValueError(f"Provided path '{folder_path}'"
-                             f" is not a directory.")
-        return folder_path
-
-    @staticmethod
-    def _normalize_output_report_path(
-            output_report_path: Path | None) -> Path | None:
-        # Normalize output report path to a Path object
-        if output_report_path is None:
-            return None
-        if not isinstance(output_report_path, Path):
-            if isinstance(output_report_path, str):
-                output_report_path = Path(output_report_path)
-            else:
-                raise TypeError(
-                    "output_report_path must be a Path object, "
-                    f"got {type(output_report_path).__name__} instead."
-                )
-        return output_report_path.resolve()
-
-    @staticmethod
-    def _normalize_patterns(patterns: list[str] | None) -> list[str] | None:
-        # Normalize patterns list to ensure they are strings
-        if patterns is None:
-            return None
-        if not isinstance(patterns, list):
-            raise TypeError(
-                "Patterns must be a list of strings, "
-                f"got {type(patterns).__name__} instead."
-            )
-        return [pattern.strip() for pattern in patterns if pattern.strip()]
-
-    @staticmethod
-    def _normalize_size(size: str | None) -> int | None:
-        # Normalize size string to an integer in bytes
-        if size is None:
-            return None
-
-        # Check if the size string has a valid number format
-        match = re.match(r"^\s*(\d*\.?\d*)\s*([KMGT]?I?B)?\s*$",
-                         size, re.IGNORECASE)
-        if not match:
-            raise ValueError(
-                f"Invalid size format '{size}': must contain a valid number"
-            )
-
-        number, unit = match.groups()
-        if not number or number == ".":
-            raise ValueError(f"Invalid number format in size '{size}'")
-
-        try:
-            return utils.str_file_size_to_int(size)
-        except ValueError as e:
-            raise ValueError(f"Invalid size format '{size}': {e}") from e
-
-    @staticmethod
-    def _normalize_threads(threads: int | None) -> int:
-        # Normalize threads count to a reasonable value
-        if threads is None or threads <= 0:
-            return min(32, os.cpu_count() or 8)
-        if threads > 32:
-            print(
-                f"WARNING: Using {threads} threads, "
-                "which is more than the recommended maximum of 32."
-            )
-        return threads
 
     @staticmethod
     def _get_files_list(
