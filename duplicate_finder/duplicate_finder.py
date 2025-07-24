@@ -5,6 +5,7 @@
 import fnmatch
 import os
 import re
+import sys
 from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -72,7 +73,7 @@ class DuplicateFinder:
 
         # Stage 1: Scan the folder and find duplicates
         print(f"Scanning folder: {self.folder_path}")
-        self.file_groups = self._group_files_by_size(
+        self.file_groups = self._get_files_list(
             folder_path=self.folder_path,
             include_patterns=self.include_patterns,
             exclude_patterns=self.exclude_patterns,
@@ -81,6 +82,13 @@ class DuplicateFinder:
         )
         if not self.file_groups:
             print("No files found or all files are excluded.")
+            return self.duplicates
+
+        # Remove single files from the list, as they cannot be duplicates
+        self.file_groups = self._remove_single_files_from_file_list(
+            files_list=self.file_groups)
+        if not self.file_groups:
+            print("No potential duplicates found after filtering by size.")
             return self.duplicates
 
         # Stage 2: Hash files that have the same size
@@ -227,36 +235,30 @@ class DuplicateFinder:
         return threads
 
     @staticmethod
-    def _group_files_by_size(
+    def _get_files_list(
         folder_path: Path | None = None,
         include_patterns: list[str] | None = None,
         exclude_patterns: list[str] | None = None,
         min_size: int | None = None,
-        max_size: int | None = None,
-    ) -> dict[int, list[Path]]:
+        max_size: int | None = None) -> dict[int, list[Path]]:
         # Group all files by their size
         if not folder_path.is_dir():
             print(f"ERROR: Path '{folder_path}'"
                   f" is not a folder or doesn't exist")
             return {}
 
-        print("Counting files...")
-        total = 0
-        for i, p in enumerate(folder_path.rglob("*"), 1):
-            if p.is_file() and not p.is_symlink():
-                total += 1
-                print(f"Found so far: {total} files...", end='\r')
-        # Clear the line after counting
-        print(' ' * 50, end='\r')
-        print(f"Found {total} files.")
-
-        print("Grouping by size...")
-        files_by_size = defaultdict(list)
+        print("Filtering files...")
+        files = defaultdict(list)
         processed = 0
+        selected = 0
 
         for p in folder_path.rglob("*"):
             try:
                 if p.is_file() and not p.is_symlink():
+                    processed += 1
+                    print(f"\r[Size Scan] Progress [{processed}]",
+                          end="")
+
                     # Check file size
                     size = p.stat().st_size
                     if min_size and size < min_size:
@@ -280,15 +282,37 @@ class DuplicateFinder:
                         ):
                             continue
 
-                    files_by_size[size].append(p)
-                    processed += 1
-                    print(f"\r[Size Scan] Progress [{processed}/{total}]",
-                          end="")
+                    files[size].append(p)
+                    selected += 1
             except (OSError, PermissionError) as e:
                 print(f"\nATTENTION: Skipping {p} due to access error: {e}")
 
-        print(f"\nScanning finished. Processed {processed} of {total} files.")
-        return files_by_size
+        print(f"\nScanning finished. Selected {selected}"
+              f" files from {processed}.")
+        print(f"Found {len(files)} unique file sizes.")
+        return files
+
+    @staticmethod
+    def _remove_single_files_from_file_list(
+        files_list: dict[int, list[Path]],
+    ) -> dict[int, list[Path]]:
+        # Filter files by size to find potential duplicates
+        if not files_list:
+            print("No files found, skipping duplicate search.")
+            return {}
+
+        result = {}
+        print("Grouping files by size...")
+        for i, (size, files) in enumerate(files_list.items(), 1):
+            if len(files) > 1:
+                result[size] = files
+            print(f"\r[Grouping] Progress [{i}/{len(files_list)}]",
+                  end="",
+                  file=sys.stdout,
+                  flush=True)
+        print()
+        print(f"Found {len(result)} potential duplicate groups ")
+        return result
 
     @staticmethod
     def _group_files_by_hash(
@@ -301,12 +325,8 @@ class DuplicateFinder:
         # Calculate hash for files that have the same size
         print("Hashing potential duplicates...")
 
-        potential_duplicates = {
-            size: files for size, files in files_by_size.items()
-            if len(files) > 1
-        }
         files_to_hash = [
-            path for files in potential_duplicates.values() for path in files
+            path for files in files_by_size.values() for path in files
         ]
         total = len(files_to_hash)
 
@@ -323,7 +343,10 @@ class DuplicateFinder:
                                 path): path for path in files_to_hash
             }
             for i, future in enumerate(as_completed(future_to_path), 1):
-                print(f"\r[Hashing] Progress [{i}/{total}]", end="")
+                print(f"\r[Hashing] Progress [{i}/{total}]",
+                      end="",
+                      file=sys.stdout,
+                      flush=True)
                 try:
                     path, file_hash = future.result()
                     if file_hash:
