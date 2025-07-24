@@ -53,10 +53,8 @@ class DuplicateFinder:
 
         # Validate and normalize input parameters
         self.folder_path = self._normalize_folder_path(folder_path_to_scan)
-        self.exclude_patterns = (
-            self._normalize_patterns(exclude_patterns))
-        self.include_patterns = (
-            self._normalize_patterns(include_patterns))
+        self.exclude_patterns = self._normalize_patterns(exclude_patterns)
+        self.include_patterns = self._normalize_patterns(include_patterns)
         self.output_report_path = (
             self._normalize_output_report_path(output_report_path))
         self.delete_report_path = (
@@ -72,31 +70,29 @@ class DuplicateFinder:
 
         # Stage 1: Scan the folder and find duplicates
         print(f"Scanning folder: {self.folder_path}")
-        self.file_groups_by_size = (
-            self._group_files_by_size(
-                folder_path=self.folder_path,
-                include_patterns=self.include_patterns,
-                exclude_patterns=self.exclude_patterns,
-                min_size=self.min_size,
-                max_size=self.max_size
-            ))
+        self.file_groups_by_size = self._group_files_by_size(
+            folder_path=self.folder_path,
+            include_patterns=self.include_patterns,
+            exclude_patterns=self.exclude_patterns,
+            min_size=self.min_size,
+            max_size=self.max_size,
+        )
         if not self.file_groups_by_size:
             print("No files found or all files are excluded.")
             return self.duplicates
 
         # Stage 2: Hash files that have the same size
-        self.file_groups_by_hash = (
-            self._group_files_by_hash(
-                files_by_size=self.file_groups_by_size,
-                max_workers=self.threads))
+        self.file_groups_by_hash = self._group_files_by_hash(
+            files_by_size=self.file_groups_by_size, max_workers=self.threads
+        )
         if not self.file_groups_by_hash:
             print("No potential duplicates found after hashing.")
             return self.duplicates
 
         # Stage 3:Sort duplicates and print them
         self._find_duplicates(
-            sort_by_group=self.sort_by_group,
-            sort_by_size=self.sort_by_size)
+            sort_by_group=self.sort_by_group, sort_by_size=self.sort_by_size
+        )
         self._print_duplicates()
 
         if not self.duplicates:
@@ -122,8 +118,8 @@ class DuplicateFinder:
                 )
             if confirm == "y":
                 self._delete_duplicates(
-                    dry_run=self.dry_run,
-                    report_path=self.delete_report_path)
+                    dry_run=self.dry_run, report_path=self.delete_report_path
+                )
             else:
                 print("Deletion cancelled.")
 
@@ -147,15 +143,13 @@ class DuplicateFinder:
                 )
         folder_path = folder_path.resolve()
         if not folder_path.is_dir():
-            raise ValueError(
-                f"Provided path '{folder_path}' is not a directory."
-            )
+            raise ValueError(f"Provided path '{folder_path}'"
+                             f" is not a directory.")
         return folder_path
 
     @staticmethod
     def _normalize_output_report_path(
-        output_report_path: Path | None
-    ) -> Path | None:
+            output_report_path: Path | None) -> Path | None:
         # Normalize output report path to a Path object
         if output_report_path is None:
             return None
@@ -170,9 +164,7 @@ class DuplicateFinder:
         return output_report_path.resolve()
 
     @staticmethod
-    def _normalize_patterns(
-        patterns: list[str] | None
-    ) -> list[str] | None:
+    def _normalize_patterns(patterns: list[str] | None) -> list[str] | None:
         # Normalize patterns list to ensure they are strings
         if patterns is None:
             return None
@@ -190,9 +182,12 @@ class DuplicateFinder:
             return None
 
         # Check if the size string has a valid number format
-        match = re.match(r"^\s*(\d*\.?\d*)\s*([KMGT]?I?B)?\s*$", size, re.IGNORECASE)
+        match = re.match(r"^\s*(\d*\.?\d*)\s*([KMGT]?I?B)?\s*$",
+                         size, re.IGNORECASE)
         if not match:
-           raise ValueError(f"Invalid size format '{size}': must contain a valid number")
+            raise ValueError(
+                f"Invalid size format '{size}': must contain a valid number"
+            )
 
         number, unit = match.groups()
         if not number or number == ".":
@@ -201,9 +196,7 @@ class DuplicateFinder:
         try:
             return utils.str_file_size_to_int(size)
         except ValueError as e:
-            raise ValueError(
-                f"Invalid size format '{size}': {e}"
-            ) from e
+            raise ValueError(f"Invalid size format '{size}': {e}") from e
 
     @staticmethod
     def _normalize_threads(threads: int | None) -> int:
@@ -219,22 +212,23 @@ class DuplicateFinder:
 
     @staticmethod
     def _group_files_by_size(
-            folder_path: Path | None = None,
-            include_patterns: list[str] | None = None,
-            exclude_patterns: list[str] | None = None,
-            min_size: int | None = None,
-            max_size: int | None = None,
+        folder_path: Path | None = None,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
+        min_size: int | None = None,
+        max_size: int | None = None,
     ) -> dict[int, list[Path]]:
         # Group all files by their size
         if not folder_path.is_dir():
-            print(
-                f"ERROR: Path '{folder_path}'"
-                f" is not a folder or doesn't exist"
-            )
+            print(f"ERROR: Path '{folder_path}'"
+                  f" is not a folder or doesn't exist")
             return {}
 
         print("Counting files...")
-        total = sum(1 for p in folder_path.rglob("*") if p.is_file() and not p.is_symlink())
+        total = sum(
+            1 for p in folder_path.rglob("*")
+            if p.is_file() and not p.is_symlink()
+        )
         print(f"Found {total} files.")
 
         print("Scanning files and grouping by size...")
@@ -245,13 +239,17 @@ class DuplicateFinder:
             try:
                 if p.is_file() and not p.is_symlink():
                     if include_patterns:
-                        if not any(fnmatch.fnmatch(p.as_posix(), pattern)
-                                for pattern in include_patterns):
+                        if not any(
+                            fnmatch.fnmatch(p.as_posix(), pattern)
+                            for pattern in include_patterns
+                        ):
                             continue
 
                     if exclude_patterns:
-                        if any(fnmatch.fnmatch(p.as_posix(), pattern)
-                            for pattern in exclude_patterns):
+                        if any(
+                            fnmatch.fnmatch(p.as_posix(), pattern)
+                            for pattern in exclude_patterns
+                        ):
                             continue
 
                     size = p.stat().st_size
@@ -263,7 +261,8 @@ class DuplicateFinder:
 
                     files_by_size[size].append(p)
                     processed += 1
-                    print(f"\r[Size Scan] Progress [{processed}/{total}]", end="")
+                    print(f"\r[Size Scan] Progress [{processed}/{total}]",
+                          end="")
             except (OSError, PermissionError) as e:
                 print(f"\nATTENTION: Skipping {p} due to access error: {e}")
 
@@ -272,8 +271,8 @@ class DuplicateFinder:
 
     @staticmethod
     def _group_files_by_hash(
-            files_by_size: dict[int, list[Path]],
-            max_workers: int = 8) -> dict[str, list[Path]]:
+        files_by_size: dict[int, list[Path]], max_workers: int = 8
+    ) -> dict[str, list[Path]]:
         if not files_by_size:
             print("No files to hash, skipping hashing step.")
             return {}
@@ -282,8 +281,8 @@ class DuplicateFinder:
         print("Hashing potential duplicates...")
 
         potential_duplicates = {
-            size: files for size, files
-            in files_by_size.items() if len(files) > 1
+            size: files for size, files in files_by_size.items()
+            if len(files) > 1
         }
         files_to_hash = [
             path for files in potential_duplicates.values() for path in files
@@ -299,8 +298,8 @@ class DuplicateFinder:
         # Parallel hashing by using threads
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_path = {
-                executor.submit(hash_worker, path):
-                    path for path in files_to_hash
+                executor.submit(hash_worker,
+                                path): path for path in files_to_hash
             }
             for i, future in enumerate(as_completed(future_to_path), 1):
                 print(f"\r[Hashing] Progress [{i}/{total}]", end="")
@@ -310,7 +309,7 @@ class DuplicateFinder:
                         with lock:
                             files_by_hash[file_hash].append(path)
                 except Exception as e:
-                    print(f"\nERROR: Failed to hash"
+                    print(f"\nERROR: Failed to hash" f""
                           f" {future_to_path[future]}: {e}")
         print()
         return files_by_hash
@@ -321,7 +320,8 @@ class DuplicateFinder:
         # Group files by hash; optionally sort the result
         groups = [
             sorted(group) for group
-            in self.file_groups_by_hash.values() if len(group) > 1
+            in self.file_groups_by_hash.values()
+            if len(group) > 1
         ]
         if sort_by_group:
             groups.sort(key=len, reverse=True)
@@ -342,7 +342,7 @@ class DuplicateFinder:
             size = Path(group[0]).stat().st_size
             print(
                 f"\nGroup {idx}/{total_groups} ({len(group)}"
-                f" file(s), size: {utils.humanize_size(size)}):"
+                f" file(s), size: {utils.int_file_size_to_str(size)}):"
             )
             for path in group:
                 print(f"  - {path}")
@@ -403,7 +403,7 @@ class DuplicateFinder:
         print(
             f"Total"
             f" {'freed' if not dry_run else 'possible freed'}"
-            f" ({utils.humanize_size(total_deleted_size)})"
+            f" ({utils.int_file_size_to_str(total_deleted_size)})"
         )
 
         # Write deletion report if requested
@@ -471,8 +471,10 @@ class DuplicateFinder:
                     report_lines.append(f"FAILED: {path} ({e})")
 
         print(f"\nTotal deleted interactively: {deleted_count}")
-        print(f"\nTotal deleted size: "
-              f"{utils.humanize_size(total_deleted_size)}")
+        print(
+            f"\nTotal deleted size: "
+            f"{utils.int_file_size_to_str(total_deleted_size)}"
+        )
 
         if report_path:
             try:

@@ -59,7 +59,7 @@ def str_file_size_to_int(size_str: str) -> int:
     return int(float(number) * units[unit])
 
 
-def humanize_size(size_bytes: int) -> str:
+def int_file_size_to_str(size_bytes: int) -> str:
     """
     Convert a file size in bytes to a human-readable string (e.g., '1.2 MB').
 
