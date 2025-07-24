@@ -83,7 +83,10 @@ def int_file_size_to_str(size_bytes: int) -> str:
     return f"{size_bytes:.1f} PB"
 
 
-def files_are_identical(file1: Path, file2: Path, chunk_size: int = 65536) -> bool:
+def files_are_identical(
+        file1: Path,
+        file2: Path,
+        chunk_size: int = 65536) -> bool:
     """
     Check if two files are identical by comparing their SHA256 hashes.
 

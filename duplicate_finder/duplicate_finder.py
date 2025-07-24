@@ -98,9 +98,10 @@ class DuplicateFinder:
                 self._verify_content(self.file_groups))
 
         # Group files into duplicate groups
-        self.duplicates = self._group_duplicates(self.file_groups,
-            sort_by_group=self.sort_by_group, sort_by_size=self.sort_by_size
-        )
+        self.duplicates = (
+            self._group_duplicates(self.file_groups,
+                                   sort_by_group=self.sort_by_group,
+                                   sort_by_size=self.sort_by_size))
         # Clear file groups to free memory
         self.file_groups.clear()
 
@@ -132,9 +133,10 @@ class DuplicateFinder:
                     .lower()
                 )
             if confirm == "y":
-                self._delete_duplicates(self.duplicates,
-                    dry_run=self.dry_run, report_path=self.delete_report_path
-                )
+                self._delete_duplicates(
+                    self.duplicates,
+                    dry_run=self.dry_run,
+                    report_path=self.delete_report_path)
             else:
                 print("Deletion cancelled.")
 
@@ -336,8 +338,7 @@ class DuplicateFinder:
     @staticmethod
     def _group_duplicates(files: dict[str, list[Path]],
                           sort_by_group: bool = False,
-                          sort_by_size: bool = False
-    ) -> list[list[Path]]:
+                          sort_by_size: bool = False) -> list[list[Path]]:
         groups = [
             sorted(group) for group
             in files.values()
@@ -390,8 +391,8 @@ class DuplicateFinder:
 
     @staticmethod
     def _delete_duplicates(duplicates: list[list[Path]],
-        dry_run: bool = False, report_path: Path | None = None
-    ) -> None:
+                           dry_run: bool = False,
+                           report_path: Path | None = None) -> None:
         # Delete all duplicates (keeping first file
         # in each group), optionally save report
         print("\n[DRY RUN]" if dry_run else "\nDeleting duplicate files...")
