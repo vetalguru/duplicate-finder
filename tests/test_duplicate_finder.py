@@ -268,7 +268,7 @@ def test_interactive_deletion_keep_first(tmp_path, monkeypatch, capsys):
 
     monkeypatch.setattr("builtins.input", lambda _: "1")
 
-    finder._interactive_deletion()
+    finder._delete_duplicates_interactive()
 
     assert f1.exists()
     assert not f2.exists()

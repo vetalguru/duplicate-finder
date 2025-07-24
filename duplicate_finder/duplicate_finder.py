@@ -117,7 +117,7 @@ class DuplicateFinder:
         # Stage 4: Handle deletion if requested
         # Handle interactive or automatic deletion
         if self.interactive:
-            self._interactive_deletion(report_path=self.delete_report_path)
+            self._delete_duplicates_interactive(report_path=self.delete_report_path)
         elif self.delete:
             confirm = "y"
             if not self.dry_run:
@@ -437,15 +437,18 @@ class DuplicateFinder:
             except Exception as e:
                 print(f"ERROR: Failed to save report: {e}")
 
-    def _interactive_deletion(self, report_path: Path | None = None) -> None:
+    @staticmethod
+    def _delete_duplicates_interactive(duplicates: list[list[Path]],
+                                       report_path: Path | None = None
+                                       ) -> None:
         # Prompt user to choose which file to keep in each group
         print("\nInteractive duplicate cleanup started.")
         deleted_count = 0
         total_deleted_size = 0
         report_lines = []
-        total_groups = len(self.duplicates)
+        total_groups = len(duplicates)
 
-        for idx, group in enumerate(self.duplicates, start=1):
+        for idx, group in enumerate(duplicates, start=1):
             print(f"\nGroup {idx}/{total_groups} ({len(group)} files):")
             for i, path in enumerate(group):
                 print(f"  [{i + 1}] {path}")
@@ -477,13 +480,13 @@ class DuplicateFinder:
             for path in to_delete:
                 try:
                     try:
-                        file_size = Path(path).stat().st_size
+                        file_size = path.stat().st_size
                     except Exception as e:
                         print(f"ERROR: Could not get size for {path}: {e}")
                         report_lines.append(f"FAILED: {path} ({e})")
                         continue
 
-                    Path(path).unlink()
+                    path.unlink()
                     print(f"Deleted: {path}")
                     report_lines.append(f"Deleted: {path}")
                     deleted_count += 1
