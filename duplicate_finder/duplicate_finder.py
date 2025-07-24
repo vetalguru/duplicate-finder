@@ -117,7 +117,9 @@ class DuplicateFinder:
         # Stage 4: Handle deletion if requested
         # Handle interactive or automatic deletion
         if self.interactive:
-            self._delete_duplicates_interactive(report_path=self.delete_report_path)
+            self._delete_duplicates_interactive(
+                duplicates=self.duplicates,
+                report_path=self.delete_report_path)
         elif self.delete:
             confirm = "y"
             if not self.dry_run:
@@ -237,13 +239,16 @@ class DuplicateFinder:
             return {}
 
         print("Counting files...")
-        total = sum(
-            1 for p in folder_path.rglob("*")
-            if p.is_file() and not p.is_symlink()
-        )
+        total = 0
+        for i, p in enumerate(folder_path.rglob("*"), 1):
+            if p.is_file() and not p.is_symlink():
+                total += 1
+                print(f"Found so far: {total} files...", end='\r')
+        # Clear the line after counting
+        print(' ' * 50, end='\r')
         print(f"Found {total} files.")
 
-        print("Scanning files and grouping by size...")
+        print("Grouping by size...")
         files_by_size = defaultdict(list)
         processed = 0
 
