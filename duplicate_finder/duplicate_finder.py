@@ -32,7 +32,7 @@ class DuplicateFinder:
         # Stage 1: Scan the folder and find duplicates
         print(f"Scanning folder: {self.cfg.scan_folder_path}")
         self.file_groups = self._get_files_list(
-            folder_path = self.cfg.scan_folder_path,
+            folder_path=self.cfg.scan_folder_path,
             include_patterns=self.cfg.include_patterns,
             exclude_patterns=self.cfg.exclude_patterns,
             min_size=self.cfg.min_file_size,
@@ -79,7 +79,8 @@ class DuplicateFinder:
 
         # Save duplicates to output report if requested
         if self.cfg.output_file_path:
-            self._save_report_to_file(self.duplicates, self.cfg.output_file_path)
+            self._save_report_to_file(
+                self.duplicates, self.cfg.output_file_path)
 
         # Stage 4: Handle deletion if requested
         # Handle interactive or automatic deletion
@@ -119,7 +120,8 @@ class DuplicateFinder:
         include_patterns: list[str] | None = None,
         exclude_patterns: list[str] | None = None,
         min_size: int | None = None,
-        max_size: int | None = None) -> dict[int, list[Path]]:
+        max_size: int | None = None
+    ) -> dict[int, list[Path]]:
         # Group all files by their size
         if not folder_path.is_dir():
             print(f"ERROR: Path '{folder_path}'"
