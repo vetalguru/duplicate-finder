@@ -130,7 +130,7 @@ class DuplicateFinder:
                     .lower()
                 )
             if confirm == "y":
-                self._delete_duplicates(
+                self._delete_duplicates(self.duplicates,
                     dry_run=self.dry_run, report_path=self.delete_report_path
                 )
             else:
@@ -383,8 +383,9 @@ class DuplicateFinder:
         except Exception as e:
             print(f"\nERROR: Failed to save to file {output_report_path}: {e}")
 
-    def _delete_duplicates(
-        self, dry_run: bool = False, report_path: Path | None = None
+    @staticmethod
+    def _delete_duplicates(duplicates: list[list[Path]],
+        dry_run: bool = False, report_path: Path | None = None
     ) -> None:
         # Delete all duplicates (keeping first file
         # in each group), optionally save report
@@ -392,10 +393,10 @@ class DuplicateFinder:
         deleted_count = 0
         report_lines = []
         total_deleted_size = 0
-        for group in self.duplicates:
+        for group in duplicates:
             for path in group[1:]:  # Keep just a first file in each group
                 try:
-                    file_size = Path(path).stat().st_size
+                    file_size = path.stat().st_size
                 except Exception as e:
                     print(f"ERROR: Could not get size for {path}: {e}")
                     report_lines.append(f"FAILED: {path} ({e})")
@@ -406,7 +407,7 @@ class DuplicateFinder:
                     report_lines.append(f"[would delete] {path}")
                 else:
                     try:
-                        Path(path).unlink()
+                        path.unlink()
                         print(f"Deleted: {path}")
                         report_lines.append(f"Deleted: {path}")
                     except Exception as e:
