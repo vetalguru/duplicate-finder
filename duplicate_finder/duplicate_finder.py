@@ -92,17 +92,17 @@ class DuplicateFinder:
             return self.duplicates
 
         # Stage 3: Sort duplicates and print them
+        # Verify duplicates by comparing file contents
+        if self.verify_content:
+            self.file_groups = (
+                self._verify_content(self.file_groups))
+
+        # Group files into duplicate groups
         self.duplicates = self._group_duplicates(self.file_groups,
             sort_by_group=self.sort_by_group, sort_by_size=self.sort_by_size
         )
         # Clear file groups to free memory
         self.file_groups.clear()
-
-        # Stage 3.1: Verify duplicates by comparing file contents
-        if self.verify_content:
-            print("\nVerifying duplicates by file contents...")
-            self.file_groups = (
-                self._verify_content(self.file_groups))
 
         if not self.duplicates:
             return self.duplicates
