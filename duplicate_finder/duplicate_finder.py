@@ -112,7 +112,7 @@ class DuplicateFinder:
 
         # Save duplicates to output report if requested
         if self.output_report_path:
-            self._save_to_file(self.output_report_path)
+            self._save_report_to_file(self.duplicates, self.output_report_path)
 
         # Stage 4: Handle deletion if requested
         # Handle interactive or automatic deletion
@@ -363,13 +363,15 @@ class DuplicateFinder:
             for path in group:
                 print(f"  - {path}")
 
-    def _save_to_file(self, output_report_path: Path) -> None:
+    @staticmethod
+    def _save_report_to_file(duplicates: list[list[Path]],
+                             output_report_path: Path) -> None:
         # Save duplicate report to a specified file
-        total_groups = len(self.duplicates)
+        total_groups = len(duplicates)
         try:
             with open(output_report_path, "w", encoding="utf-8") as f:
                 f.write("Duplicate files:\n")
-                for idx, group in enumerate(self.duplicates, 1):
+                for idx, group in enumerate(duplicates, 1):
                     size = Path(group[0]).stat().st_size
                     f.write(
                         f"\nGroup {idx}/{total_groups} ({len(group)}"
