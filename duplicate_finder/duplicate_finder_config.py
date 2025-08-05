@@ -41,13 +41,21 @@ class DuplicateFinderConfig:
     # This can be a string representing a human-readable
     # size (e.g., '10MB', '2.5 GiB').
     # If None, no size limit will be applied.
-    max_file_size: Optional[str] = None
+    max_file_size_str: Optional[str] = None
+
+    # The maximum file size in bytes.
+    # Calculates from max_file_size_str
+    max_file_size: Optional[int] = None
 
     # The minimum file size to consider for duplicates.
     # This can be a string representing a human-readable
     # size (e.g., '10MB', '2.5 GiB').
     # If None, no size limit will be applied.
-    min_file_size: Optional[str] = None
+    min_file_size_str: Optional[str] = None
+
+    # The minimumfile size in bytes.
+    # Calculates from min_file_size_str
+    min_file_size: Optional[int] = None
 
     # The output file path where the results will be saved.
     # If None, results will not be saved to a file.
@@ -107,8 +115,10 @@ class DuplicateFinderConfig:
         self.scan_folder_path = self.normalize_dir_path(self.scan_folder_path)
         self.exclude_patterns = self.normalize_pattern(self.exclude_patterns)
         self.include_patterns = self.normalize_pattern(self.include_patterns)
-        self.max_file_size = self.normalize_str_file_size(self.max_file_size)
-        self.min_file_size = self.normalize_str_file_size(self.min_file_size)
+        self.max_file_size = (
+            self.normalize_str_file_size(self.max_file_size_str))
+        self.min_file_size = (
+            self.normalize_str_file_size(self.min_file_size_str))
         self.output_file_path = self.normalize_file_path(self.output_file_path)
         self.threads_count = self.normalize_threads_counter(self.threads_count)
         self.delete_report_file_path = self.normalize_file_path(
