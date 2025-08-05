@@ -72,15 +72,18 @@ def int_file_size_to_str(size_bytes: int) -> str:
     if (size_bytes is None or
             not isinstance(size_bytes, (int, float)) or size_bytes < 0):
         return "Invalid size"
+
+    tmp_size_bytes = float(size_bytes)
+
     for unit in ["B", "KB", "MB", "GB", "TB"]:
-        if size_bytes < 1024:
+        if tmp_size_bytes < 1024:
             return (
-                f"{int(size_bytes)} {unit}"
+                f"{int(tmp_size_bytes)} {unit}"
                 if unit == "B"
-                else f"{size_bytes:.1f} {unit}"
+                else f"{tmp_size_bytes:.1f} {unit}"
             )
-        size_bytes /= 1024
-    return f"{size_bytes:.1f} PB"
+        tmp_size_bytes /= 1024
+    return f"{tmp_size_bytes:.1f} PB"
 
 
 def files_are_identical(
