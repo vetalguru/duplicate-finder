@@ -116,7 +116,7 @@ class DuplicateFinder:
 
     @staticmethod
     def _get_files_list(
-        folder_path: Path | None = None,
+        folder_path: Path,
         include_patterns: list[str] | None = None,
         exclude_patterns: list[str] | None = None,
         min_size: int | None = None,
