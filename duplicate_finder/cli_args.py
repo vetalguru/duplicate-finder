@@ -19,30 +19,31 @@ class ArgumentParserAdapter:
         self.parser.add_argument(
             "folder_path",
             type=str,
-            help="Mandatory parameter: path to folder for search",
+            help="Mandatory parameter: "
+                 "path to folder for searching duplicates.",
         )
 
         # Optional mutually exclusive flags for sorting strategy
         sort_group = self.parser.add_mutually_exclusive_group()
         sort_group.add_argument(
-            "--sort-by-group-size",
+            "--sort-by-group-size", "-g",
             action="store_true",
             help="Optional: Sort duplicate groups by number"
             " of files in group (descending)",
         )
         sort_group.add_argument(
-            "--sort-by-file-size",
+            "--sort-by-file-size", "-s",
             action="store_true",
             help="Optional: Sort duplicate groups by file size (descending)",
         )
 
         self.parser.add_argument(
-            "--output",
+            "--output", "-o",
             type=str,
             help="Optional: path to output file (e.g., duplicates.txt)",
         )
         self.parser.add_argument(
-            "--exclude",
+            "--exclude", "-e",
             type=str,
             nargs="*",
             default=[],
@@ -57,7 +58,7 @@ class ArgumentParserAdapter:
             ),
         )
         self.parser.add_argument(
-            "--include",
+            "--include", "-i",
             type=str,
             nargs="*",
             default=[],
@@ -72,40 +73,40 @@ class ArgumentParserAdapter:
             ),
         )
         self.parser.add_argument(
-            "--delete",
+            "--delete", "-d",
             action="store_true",
             help="Optional: delete duplicate files (keep first file in group)",
         )
         self.parser.add_argument(
-            "--delete-report",
+            "--delete-report", "-r",
             type=str,
             help="Optional: path to report file where deleted"
             " file paths will be saved",
         )
         self.parser.add_argument(
-            "--dry-run",
+            "--dry-run", "-n",
             action="store_true",
-            help="Optional: Show a list of files to be deleted"
+            help="Optional: No action. Show a list of files to be deleted"
             " without actually deleting them",
         )
         self.parser.add_argument(
-            "--interactive",
+            "--interactive", "-t",
             action="store_true",
             help=(
-                "Optional: interactive mode,"
+                "Optional: interactive mode (talk),"
                 " select files to delete group by group"
             ),
         )
 
         self.parser.add_argument(
-            "--threads",
+            "--threads", "-j",
             type=int,
             default=None,
             help="Optional: Number of threads. Dynamically adjusted by default",
         )
 
         self.parser.add_argument(
-            "--min-size",
+            "--min-size", "-m",
             type=str,
             default=None,
             help="Optional: Minimum file size to consider for"
@@ -113,7 +114,7 @@ class ArgumentParserAdapter:
         )
 
         self.parser.add_argument(
-            "--max-size",
+            "--max-size", "-x",
             type=str,
             default=None,
             help="Optional: Maximum file size to consider for"
@@ -121,7 +122,7 @@ class ArgumentParserAdapter:
         )
 
         self.parser.add_argument(
-            "--verify-content",
+            "--verify-content", "-v",
             action="store_true",
             help="Optional: Compare files byte by byte to verify"
             " they are identical (default is to compare file sizes only)",
