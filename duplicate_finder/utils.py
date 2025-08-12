@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 
-def calc_file_sha256(file_path: Path, block_size: int = 65536) -> str:
+def calc_file_sha256(file_path: str, block_size: int = 65536) -> str:
     """Compute SHA256 hash for a given file."""
     sha256 = hashlib.sha256()
     with open(file_path, "rb") as f:
@@ -87,8 +87,8 @@ def int_file_size_to_str(size_bytes: int) -> str:
 
 
 def files_are_identical(
-        file1: Path,
-        file2: Path,
+        file1: str,
+        file2: str,
         chunk_size: int = 65536) -> bool:
     """
     Check if two files are identical by comparing their SHA256 hashes.
@@ -101,10 +101,12 @@ def files_are_identical(
     Returns:
         bool: True if files are identical, False otherwise.
     """
-    if file1.stat().st_size != file2.stat().st_size:
+    f1 = Path(file1)
+    f2 = Path(file2)
+    if f1.stat().st_size != f2.stat().st_size:
         return False
 
-    with open(file1, "rb") as f1, open(file2, "rb") as f2:
+    with open(f1, "rb") as f1, open(f2, "rb") as f2:
         while True:
             b1 = f1.read(chunk_size)
             b2 = f2.read(chunk_size)

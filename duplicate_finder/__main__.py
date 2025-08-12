@@ -2,11 +2,9 @@
 # Licensed under the MIT License.
 # See LICENSE file in the project root for full license text.
 
-from pathlib import Path
-
-from .cli_args import ArgumentParserAdapter
-from .duplicate_finder import DuplicateFinder
-from .duplicate_finder_config import DuplicateFinderConfig
+from duplicate_finder.cli_args import ArgumentParserAdapter
+from duplicate_finder.duplicate_finder import DuplicateFinder
+from duplicate_finder.duplicate_finder_config import DuplicateFinderConfig
 
 
 def main() -> None:
@@ -14,7 +12,7 @@ def main() -> None:
     args = ArgumentParserAdapter().parse()
 
     config = DuplicateFinderConfig(
-        scan_folder_path=Path(args.folder_path),
+        scan_folder_path=args.folder_path,
         exclude_patterns=args.exclude,
         include_patterns=args.include,
         max_file_size_str=args.max_size,

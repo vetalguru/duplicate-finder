@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, List
 
-from .utils import str_file_size_to_int
+from duplicate_finder.utils import str_file_size_to_int
 
 
 @dataclass
@@ -19,7 +19,7 @@ class DuplicateFinderConfig:
 
     # The folder path to search for duplicate files.
     # This should be a valid path to a directory.
-    scan_folder_path: Path
+    scan_folder_path: str
 
     # Patterns to exclude from the search.
     # This can be a list of strings or None to include all files.
@@ -53,13 +53,13 @@ class DuplicateFinderConfig:
     # If None, no size limit will be applied.
     min_file_size_str: Optional[str] = None
 
-    # The minimumfile size in bytes.
+    # The minimum file size in bytes.
     # Calculates from min_file_size_str
     min_file_size: Optional[int] = None
 
     # The output file path where the results will be saved.
     # If None, results will not be saved to a file.
-    output_file_path: Optional[Path] = None
+    output_file_path: Optional[str] = None
 
     # Flag to sort duplicate groups by the number of files in each group.
     # If True, groups will be sorted by size (descending).
@@ -90,7 +90,7 @@ class DuplicateFinderConfig:
 
     # Path to a report file where deleted file paths will be saved.
     # If None, no report will be generated.
-    delete_report_file_path: Optional[Path] = None
+    delete_report_file_path: Optional[str] = None
 
     # Flag to enable interactive mode.
     # If True, the user will be prompted for confirmation before deleting files.
@@ -127,33 +127,24 @@ class DuplicateFinderConfig:
 
     # Utility functions for normalization
     @staticmethod
-    def normalize_dir_path(folder_path: Path) -> Path:
+    def normalize_dir_path(folder_path: str) -> str:
         """
         Normalize the provided folder path to ensure it is a valid Path object
         """
-        if not isinstance(folder_path, Path):
-            raise TypeError(
-                "folder_path must be a Path object, "
-                f"got {type(folder_path).__name__} instead.")
-        folder_path = folder_path.resolve()
-        if not folder_path.is_dir():
+        path = Path(folder_path).resolve()
+        if not path.is_dir():
             raise ValueError(f"Provided path '{folder_path}'"
                              f" is not a directory.")
-        return folder_path
+        return str(path)
 
     @staticmethod
-    def normalize_file_path(file_path: Path | None) -> Path | None:
+    def normalize_file_path(file_path: str | None) -> str | None:
         """
         Normalize the output report path to ensure it is a valid Path object.
         """
         if file_path is None:
             return None
-
-        if not isinstance(file_path, Path):
-            raise TypeError(
-                "output_report_path must be a Path object, "
-                f"got {type(file_path).__name__} instead.")
-        return file_path.resolve()
+        return str(Path(file_path).resolve())
 
     @staticmethod
     def normalize_pattern(patterns: list[str] | None) -> list[str] | None:
@@ -163,11 +154,6 @@ class DuplicateFinderConfig:
         """
         if patterns is None:
             return None
-        if not isinstance(patterns, list):
-            raise TypeError(
-                "Patterns must be a list of strings, "
-                f"got {type(patterns).__name__} instead."
-            )
         return [pattern.strip() for pattern in patterns if pattern.strip()]
 
     @staticmethod
