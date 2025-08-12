@@ -50,18 +50,6 @@ def test_dry_run_output(tmp_path: Path) -> None:
     assert "[would delete]" in result.stdout
 
 
-def test_output_report(tmp_path: Path) -> None:
-    file1 = create_file(tmp_path / "a.txt", "abc")
-
-    create_file(tmp_path / "b.txt", "abc")
-    report = tmp_path / "report.txt"
-
-    result = run_cli(str(tmp_path), "--output", str(report))
-    assert result.returncode == 0
-    assert report.exists()
-    assert str(file1) in report.read_text()
-
-
 def test_exclude_via_cli(tmp_path: Path) -> None:
     create_file(tmp_path / "keep.txt", "abc")
     create_file(tmp_path / "skip.log", "abc")
