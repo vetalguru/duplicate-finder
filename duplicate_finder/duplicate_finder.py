@@ -14,10 +14,9 @@ from duplicate_finder.duplicate_finder_config import DuplicateFinderConfig
 
 
 class DuplicateFinder:
-    def __init__(self):
-        self.cfg = None
+    def __init__(self) -> None:
+        self.cfg: DuplicateFinderConfig
         # Internal state for storing results
-        self.file_groups: dict[int, list[Path]] = {}
         self.duplicates: list[list[Path]] = []
 
     def run(
@@ -31,45 +30,47 @@ class DuplicateFinder:
 
         # Stage 1: Scan the folder and find duplicates
         print(f"Scanning folder: {self.cfg.scan_folder_path}")
-        self.file_groups = self._get_files_list(
+        files_by_size = self._get_files_list(
             folder_path=self.cfg.scan_folder_path,
             include_patterns=self.cfg.include_patterns,
             exclude_patterns=self.cfg.exclude_patterns,
             min_size=self.cfg.min_file_size,
             max_size=self.cfg.max_file_size)
-        if not self.file_groups:
+        if not files_by_size:
             print("No files found or all files are excluded.")
             return self.duplicates
 
         # Remove single files from the list, as they cannot be duplicates
-        self.file_groups = self._remove_single_files_from_file_list(
-            files_list=self.file_groups)
-        if not self.file_groups:
+        grouped_files = self._remove_single_files_from_file_list(
+            files_list=files_by_size)
+        files_by_size.clear()  # Free space
+        if not grouped_files:
             print("No potential duplicates found after filtering by size.")
             return self.duplicates
 
         # Stage 2: Hash files that have the same size
-        self.file_groups = self._group_files_by_hash(
-            files_by_size=self.file_groups,
+        files_by_hash = self._group_files_by_hash(
+            files_by_size=grouped_files,
             max_workers=self.cfg.threads_count)
-        if not self.file_groups:
+        grouped_files.clear()  # Free space
+        if not files_by_hash:
             print("No potential duplicates found after hashing.")
             return self.duplicates
 
         # Stage 3: Sort duplicates and print them
         # Verify duplicates by comparing file contents
         if self.cfg.verify_content:
-            self.file_groups = (
-                self._verify_content(self.file_groups))
+            files_by_hash = (
+                self._verify_content(files_by_hash))
 
         # Group files into duplicate groups
         self.duplicates = (
             self._group_duplicates(
-                self.file_groups,
+                files_by_hash,
                 sort_by_group=self.cfg.sort_by_group_size,
                 sort_by_size=self.cfg.sort_by_file_size))
         # Clear file groups to free memory
-        self.file_groups.clear()
+        files_by_hash.clear()  # Free space
 
         if not self.duplicates:
             return self.duplicates
@@ -111,7 +112,6 @@ class DuplicateFinder:
 
     def _clear_results(self) -> None:
         # Clear all previous results
-        self.file_groups.clear()
         self.duplicates.clear()
 
     @staticmethod
@@ -214,7 +214,7 @@ class DuplicateFinder:
         files_by_hash = defaultdict(list)
         lock = Lock()
 
-        def hash_worker(path):
+        def hash_worker(path: Path) -> tuple[Path, str]:
             return path, utils.calc_file_sha256(path)
 
         # Parallel hashing by using threads

@@ -6,16 +6,16 @@ import argparse
 
 
 class ArgumentParserAdapter:
-    def __init__(self):
+    def __init__(self) -> None:
         # Initialize the argument parser with a description
         self.parser = argparse.ArgumentParser(
             prog="duplicate-finder",
             description="Script to find and delete duplicates of the files",
-            formatter_class=argparse.RawTextHelpFormatter
+            formatter_class=argparse.RawTextHelpFormatter,
         )
         self._add_arguments()
 
-    def _add_arguments(self):
+    def _add_arguments(self) -> None:
         self.parser.add_argument(
             "folder_path",
             type=str,
@@ -66,15 +66,15 @@ class ArgumentParserAdapter:
                 "Use Unix-style glob syntax:\n"
                 "  *.log          - include just .log files\n"
                 "  temp/*         - include files in any 'temp' subdirectory\n"
-                "  **/.git/**     - include everything inside .git"
+                "  **/.git/**     - include everything inside .git\n"
                 " folders (recursive)\n"
                 "Patterns are matched against full POSIX-style paths."
-            )
+            ),
         )
         self.parser.add_argument(
             "--delete",
             action="store_true",
-            help="Optional: delete duplicate files (keep first file in group)"
+            help="Optional: delete duplicate files (keep first file in group)",
         )
         self.parser.add_argument(
             "--delete-report",
@@ -91,16 +91,17 @@ class ArgumentParserAdapter:
         self.parser.add_argument(
             "--interactive",
             action="store_true",
-            help="Optional: interactive mode, select files"
-                 " to delete group by group",
+            help=(
+                "Optional: interactive mode,"
+                " select files to delete group by group"
+            ),
         )
 
         self.parser.add_argument(
             "--threads",
             type=int,
             default=None,
-            help="Optional: Number of threads."
-                 " Dynamically adjusted by default",
+            help="Optional: Number of threads. Dynamically adjusted by default",
         )
 
         self.parser.add_argument(
@@ -108,7 +109,7 @@ class ArgumentParserAdapter:
             type=str,
             default=None,
             help="Optional: Minimum file size to consider for"
-                 " duplicate detection (e.g. 100K, 5M, 1G)"
+            " duplicate detection (e.g. 100K, 5M, 1G)",
         )
 
         self.parser.add_argument(
@@ -116,14 +117,14 @@ class ArgumentParserAdapter:
             type=str,
             default=None,
             help="Optional: Maximum file size to consider for"
-                 " duplicate detection (e.g. 100K, 5M, 1G)"
+            " duplicate detection (e.g. 100K, 5M, 1G)",
         )
 
         self.parser.add_argument(
             "--verify-content",
             action="store_true",
             help="Optional: Compare files byte by byte to verify"
-                 " they are identical (default is to compare file sizes only)"
+            " they are identical (default is to compare file sizes only)",
         )
 
     def parse(self) -> argparse.Namespace:

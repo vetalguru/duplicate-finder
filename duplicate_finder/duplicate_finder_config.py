@@ -74,7 +74,7 @@ class DuplicateFinderConfig:
 
     # The number of threads to use for parallel processing.
     # If None, the default number of threads will be used.
-    threads_count: Optional[int] = None
+    threads_count: int = 0
 
     # Flag to byte-by-byte verify the content of files.
     # If True, files will be verified by comparing their content.
@@ -107,7 +107,7 @@ class DuplicateFinderConfig:
     # Note: This is only applicable if delete_duplicates is True.
     dry_run: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """
         Post-initialization method to normalize and validate
         the configuration parameters.
@@ -127,18 +127,14 @@ class DuplicateFinderConfig:
 
     # Utility functions for normalization
     @staticmethod
-    def normalize_dir_path(folder_path: Path):
+    def normalize_dir_path(folder_path: Path) -> Path:
         """
         Normalize the provided folder path to ensure it is a valid Path object
         """
         if not isinstance(folder_path, Path):
-            if isinstance(folder_path, str):
-                folder_path = Path(folder_path)
-            else:
-                raise TypeError(
-                    "folder_path must be a Path object, "
-                    f"got {type(folder_path).__name__} instead."
-                )
+            raise TypeError(
+                "folder_path must be a Path object, "
+                f"got {type(folder_path).__name__} instead.")
         folder_path = folder_path.resolve()
         if not folder_path.is_dir():
             raise ValueError(f"Provided path '{folder_path}'"
@@ -154,13 +150,9 @@ class DuplicateFinderConfig:
             return None
 
         if not isinstance(file_path, Path):
-            if isinstance(file_path, str):
-                file_path = Path(file_path)
-            else:
-                raise TypeError(
-                    "output_report_path must be a Path object, "
-                    f"got {type(file_path).__name__} instead."
-                )
+            raise TypeError(
+                "output_report_path must be a Path object, "
+                f"got {type(file_path).__name__} instead.")
         return file_path.resolve()
 
     @staticmethod
@@ -206,7 +198,7 @@ class DuplicateFinderConfig:
             raise ValueError(f"Invalid size format '{size}': {e}") from e
 
     @staticmethod
-    def normalize_threads_counter(threads: int | None) -> int:
+    def normalize_threads_counter(threads: int) -> int:
         """
         Normalize the number of threads to a reasonable value.
         """
