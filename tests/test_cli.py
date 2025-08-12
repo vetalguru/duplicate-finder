@@ -6,14 +6,17 @@
 import subprocess
 import sys
 from pathlib import Path
+from typing import Optional
 
 
-def create_file(path: Path, content="data"):
+def create_file(path: Path, content: str = "data") -> str:
     path.write_text(content)
     return str(path)
 
 
-def run_cli(*args, input_text=None):
+def run_cli(
+    *args: str, input_text: Optional[str] = None
+) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
         [sys.executable, "-m", "duplicate_finder", *args],
         capture_output=True,
@@ -23,13 +26,13 @@ def run_cli(*args, input_text=None):
     return result
 
 
-def test_help_shows_usage():
+def test_help_shows_usage() -> None:
     result = run_cli("--help")
     assert result.returncode == 0
     assert "usage" in result.stdout.lower()
 
 
-def test_find_duplicates_in_cli(tmp_path):
+def test_find_duplicates_in_cli(tmp_path: Path) -> None:
     create_file(tmp_path / "a.txt", "dupe")
     create_file(tmp_path / "b.txt", "dupe")
 
@@ -38,7 +41,7 @@ def test_find_duplicates_in_cli(tmp_path):
     assert "Duplicate files" in result.stdout
 
 
-def test_dry_run_output(tmp_path):
+def test_dry_run_output(tmp_path: Path) -> None:
     create_file(tmp_path / "x1.txt", "dupe")
     create_file(tmp_path / "x2.txt", "dupe")
 
@@ -47,7 +50,7 @@ def test_dry_run_output(tmp_path):
     assert "[would delete]" in result.stdout
 
 
-def test_output_report(tmp_path):
+def test_output_report(tmp_path: Path) -> None:
     file1 = create_file(tmp_path / "a.txt", "abc")
 
     create_file(tmp_path / "b.txt", "abc")
@@ -59,7 +62,7 @@ def test_output_report(tmp_path):
     assert str(file1) in report.read_text()
 
 
-def test_exclude_via_cli(tmp_path):
+def test_exclude_via_cli(tmp_path: Path) -> None:
     create_file(tmp_path / "keep.txt", "abc")
     create_file(tmp_path / "skip.log", "abc")
 
