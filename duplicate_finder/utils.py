@@ -101,12 +101,12 @@ def files_are_identical(
     Returns:
         bool: True if files are identical, False otherwise.
     """
-    f1 = Path(file1)
-    f2 = Path(file2)
-    if f1.stat().st_size != f2.stat().st_size:
+    file1_path = Path(file1)
+    file2_path = Path(file2)
+    if file1_path.stat().st_size != file2_path.stat().st_size:
         return False
 
-    with open(f1, "rb") as f1, open(f2, "rb") as f2:
+    with open(file1_path, "rb") as f1, open(file2_path, "rb") as f2:
         while True:
             b1 = f1.read(chunk_size)
             b2 = f2.read(chunk_size)
