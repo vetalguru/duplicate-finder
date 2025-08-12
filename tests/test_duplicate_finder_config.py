@@ -7,6 +7,7 @@ from collections.abc import Generator
 from pathlib import Path
 
 import pytest
+
 from duplicate_finder.duplicate_finder_config import DuplicateFinderConfig
 
 

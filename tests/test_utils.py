@@ -5,8 +5,9 @@
 import hashlib
 from pathlib import Path
 
-import duplicate_finder.utils as utils
 import pytest
+
+import duplicate_finder.utils as utils
 
 
 # calc_file_sha256
