@@ -3,10 +3,10 @@
 # See LICENSE file in the project root for full license text.
 
 import hashlib
-import pytest
 from pathlib import Path
 
 import duplicate_finder.utils as utils
+import pytest
 
 
 # calc_file_sha256

@@ -2,11 +2,11 @@
 # Licensed under the MIT License.
 # See LICENSE file in the project root for full license text.
 
-import pytest
 import tempfile
-from pathlib import Path
 from collections.abc import Generator
+from pathlib import Path
 
+import pytest
 from duplicate_finder.duplicate_finder_config import DuplicateFinderConfig
 
 

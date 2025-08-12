@@ -2,12 +2,12 @@
 # Licensed under the MIT License.
 # See LICENSE file in the project root for full license text.
 
+import fnmatch
+import sys
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Lock
-import fnmatch
-import sys
 
 from duplicate_finder import utils
 from duplicate_finder.duplicate_finder_config import DuplicateFinderConfig

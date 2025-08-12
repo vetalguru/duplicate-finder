@@ -3,8 +3,8 @@
 # See LICENSE file in the project root for full license text.
 
 from pathlib import Path
+from typing import List, Optional
 from unittest.mock import patch
-from typing import Optional, List
 
 from duplicate_finder.duplicate_finder import DuplicateFinder
 from duplicate_finder.duplicate_finder_config import DuplicateFinderConfig
